@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {/* Tell Clerk where our auth pages live */}
         <ClerkProvider
-          signInUrl="/login"
+          signInUrl="/sign-in"
           signUpUrl="/sign-up"
           signInFallbackRedirectUrl="/"
           signUpFallbackRedirectUrl="/"

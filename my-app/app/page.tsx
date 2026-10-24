@@ -226,7 +226,7 @@ export default function Home() {
             <UserButton />
           ) : (
             <Link
-              href="/login"
+              href="/sign-in"
               className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95 sm:px-5"
             >
               Sign in
