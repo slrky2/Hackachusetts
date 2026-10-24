@@ -18,6 +18,11 @@ export function timeAgo(dateStr: string, now: number = Date.now()): string {
   return `${days}d ago`;
 }
 
+/** Format dollars for display: 20 → "$20", 12.5 → "$12.50". */
+export function formatDollars(amount: number): string {
+  return `$${amount.toFixed(2).replace(/\.00$/, "")}`;
+}
+
 /** Truncate a string to a given length */
 export function truncate(str: string, maxLength: number): string {
   return str.length <= maxLength ? str : `${str.slice(0, maxLength)}…`;

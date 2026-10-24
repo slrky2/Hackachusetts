@@ -110,8 +110,8 @@ export default function ReportCard({
             >
               💬 {commentCount} {commentCount === 1 ? "comment" : "comments"}
             </button>
-            <span className="rounded-lg bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-              {report.reward}
+            <span className="rounded-lg bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              🏛 City crew
             </span>
           </div>
         </div>
