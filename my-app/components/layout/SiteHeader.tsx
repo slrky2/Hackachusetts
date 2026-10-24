@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import Logo from "./Logo";
 import {
   BountyIcon,
   ChatIcon,
@@ -41,15 +42,10 @@ const NAV_ITEMS: {
 export function SiteHeader({ active }: { active?: NavKey }) {
   return (
     <header className="z-20 flex shrink-0 items-center justify-between gap-4 border-b border-black/5 bg-white/70 px-4 py-3 backdrop-blur-md sm:px-6 dark:border-white/10 dark:bg-black/40">
-      {/* Left: title */}
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-lg font-black text-white shadow-sm">
-          C
-        </span>
-        <h1 className="truncate text-xl font-extrabold tracking-tight sm:text-2xl">
-          City Land
-        </h1>
-      </div>
+      {/* Left: logo */}
+      <Link href="/" aria-label="Town² home" className="flex shrink-0 items-center pt-1">
+        <Logo className="text-[30px] sm:text-[36px]" />
+      </Link>
 
       {/* Center: nav buttons */}
       <nav className="flex flex-1 items-center justify-center gap-1 sm:gap-3">
