@@ -1,19 +1,15 @@
 import type { ReactNode } from "react";
-// import Sidebar from "@/components/layout/Sidebar";
-// import TopNav from "@/components/layout/TopNav";
+import TopNav from "@/components/layout/TopNav";
 
 /**
- * Shared layout for all authenticated dashboard routes.
- * Wraps pages with the sidebar and top navigation bar.
+ * Shared layout for the dashboard routes (Home, Map, ...).
+ * Full-height column: top nav, then the page fills the remaining space.
  */
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
-      {/* <Sidebar /> */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* <TopNav /> */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-emerald-50 text-zinc-900 dark:from-zinc-950 dark:via-black dark:to-zinc-950 dark:text-zinc-50">
+      <TopNav />
+      <main className="flex min-h-0 flex-1 flex-col">{children}</main>
     </div>
   );
 }

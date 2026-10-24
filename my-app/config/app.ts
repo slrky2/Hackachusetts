@@ -3,9 +3,11 @@
 export const APP_CONFIG = {
   name: "CivicConnect",
   tagline: "Your neighborhood, connected.",
-  defaultCity: "Boston, MA",
-  defaultMapCenter: { lat: 42.3601, lng: -71.0589 }, // Boston
+  defaultCity: "Lowell, MA",
+  defaultMapCenter: { lat: 42.6430, lng: -71.3150 }, // Lowell, MA
   defaultMapZoom: 13,
+  // Users within this radius of the city center get the map centered on them.
+  localAreaRadiusKm: 15,
 } as const;
 
 export const API_ROUTES = {
@@ -27,7 +29,9 @@ export const API_ROUTES = {
 export const MAP_CONFIG = {
   // Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local
   apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
-  mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? "",
+  // Advanced Markers require a Map ID. Google's DEMO_MAP_ID works for development;
+  // create a real one in Cloud Console > Map Management for custom styling.
+  mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID",
   libraries: ["places", "geometry"] as const,
 } as const;
 
