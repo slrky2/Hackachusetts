@@ -30,6 +30,14 @@ export default function SignInPage() {
           }}
         />
       </Suspense>
+
+      {/* Goes to our custom reset flow at /forgot-password */}
+      <Link
+        href="/forgot-password"
+        className="mt-5 w-full max-w-[400px] rounded-xl border border-emerald-600 bg-white px-4 py-2.5 text-center text-sm font-semibold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 dark:bg-zinc-900 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+      >
+        Forgot password?
+      </Link>
     </main>
   );
 }
