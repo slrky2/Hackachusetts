@@ -9,7 +9,7 @@ import { APP_CONFIG } from "@/config/app";
 import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
 import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
-import { useUserLocation, type UserLocation } from "@/lib/hooks/useUserLocation";
+import { coordsOf, useUserLocation, type UserLocation } from "@/lib/hooks/useUserLocation";
 import { SEVERITY_LEVELS, sortByPriority } from "@/lib/utils/severity";
 import type { TicketSeverity } from "@/types";
 
@@ -43,8 +43,8 @@ export default function MapPage() {
     return byLevel;
   }, [reports]);
 
-  // Only center on the user if they're actually near the city.
-  const userCoords = location.status === "in-area" ? location.coords : null;
+  // Always show the blue dot, but only center on it if the user is near the city.
+  const userCoords = coordsOf(location);
 
   function changeFilter(next: PriorityFilter) {
     setFilter(next);
@@ -61,6 +61,7 @@ export default function MapPage() {
           onSelect={setSelectedId}
           defaultZoom={14}
           userLocation={userCoords}
+          centerOnUser={location.status === "in-area"}
         />
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
           <LocationNote location={location} />

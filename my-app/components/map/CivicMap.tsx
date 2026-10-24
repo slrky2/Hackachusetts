@@ -18,6 +18,7 @@ import { formatDollars } from "@/lib/utils";
 import { BOUNTY_COLOR, POST_COLOR, SEVERITY_COLORS } from "@/lib/utils/severity";
 import type { Bounty, CityMarker } from "@/types";
 import MapErrorBoundary from "./MapErrorBoundary";
+import { CenterOnceOn, MyLocationButton } from "./MapLocationControls";
 import UserLocationMarker from "./UserLocationMarker";
 
 interface CivicMapProps {
@@ -25,8 +26,10 @@ interface CivicMapProps {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   defaultZoom?: number;
-  /** When set, shows Google's blue "you are here" dot and pans to it. */
+  /** When set, shows Google's blue "you are here" dot. */
   userLocation?: UserPosition | null;
+  /** Center on the blue dot the first time it's known (default true). */
+  centerOnUser?: boolean;
 }
 
 /**
@@ -39,6 +42,7 @@ export default function CivicMap({
   onSelect,
   defaultZoom = APP_CONFIG.defaultMapZoom,
   userLocation = null,
+  centerOnUser = true,
 }: CivicMapProps) {
   if (!MAP_CONFIG.apiKey) {
     return (
@@ -76,7 +80,8 @@ export default function CivicMap({
 
         {userLocation && <UserLocationMarker position={userLocation} />}
 
-        <PanTo position={userLocation} />
+        <CenterOnceOn position={centerOnUser ? userLocation : null} />
+        <MyLocationButton position={userLocation} />
         <PanTo position={selected} />
       </Map>
     </APIProvider>

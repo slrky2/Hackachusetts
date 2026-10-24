@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import LocationPicker from "@/components/map/LocationPicker";
 import { APP_CONFIG } from "@/config/app";
 import { useIssues } from "@/lib/hooks/useIssues";
-import { useUserLocation } from "@/lib/hooks/useUserLocation";
+import { coordsOf, useUserLocation } from "@/lib/hooks/useUserLocation";
 import type { LatLng } from "@/lib/maps";
 import { photoToJpegDataUrl } from "@/lib/utils/image";
 import { REPORT_CATEGORIES, REPORT_LIMITS, type ReportCategory } from "@/lib/utils/report";
@@ -47,12 +47,10 @@ export default function ReportPage() {
   const [submitted, setSubmitted] = useState(false);
   const { createReport } = useIssues();
 
-  // Center the map on the user as soon as the browser shares their location.
+  // Follow the user (blue dot). The map centers on them once by itself;
+  // `focus` only moves it when they press "Pin my location".
   const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
-  const userCoords = "coords" in location ? location.coords : null;
-  // An explicit focus ("Use my location") wins. Otherwise default to the user,
-  // unless they've already dropped a pin (don't yank the map away from it).
-  const mapFocus = focus ?? (pin ? null : userCoords);
+  const userCoords = coordsOf(location);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Free photo preview memory when leaving the page.
@@ -84,7 +82,19 @@ export default function ReportPage() {
     });
   }
 
+  function pinHere(here: LatLng) {
+    setPin(here);
+    setFocus(here);
+    setErrors((e) => ({ ...e, pin: undefined }));
+    setLocateError(null);
+  }
+
   function useMyLocation() {
+    // Already tracking the blue dot: pin it right away.
+    if (userCoords) {
+      pinHere({ lat: userCoords.lat, lng: userCoords.lng });
+      return;
+    }
     if (!("geolocation" in navigator)) {
       setLocateError("Your browser can't share its location. Tap the map instead.");
       return;
@@ -93,10 +103,7 @@ export default function ReportPage() {
     setLocateError(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setPin(here);
-        setFocus(here);
-        setErrors((e) => ({ ...e, pin: undefined }));
+        pinHere({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setLocating(false);
       },
       () => {
@@ -332,10 +339,13 @@ export default function ReportPage() {
               disabled={locating}
               className="rounded-full bg-black/5 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-black/10 disabled:opacity-60 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
             >
-              {locating ? "Locating…" : "📍 Use my location"}
+              {locating ? "Locating…" : "📍 Pin my location"}
             </button>
           </div>
-          <p className="mb-3 text-sm text-zinc-500">Tap the map to drop a pin. Drag the pin to adjust it.</p>
+          <p className="mb-3 text-sm text-zinc-500">
+            The blue dot is you. Press &ldquo;Pin my location&rdquo; to report right where you are, or tap the map
+            to drop a pin somewhere else. Drag the pin to adjust it.
+          </p>
 
           <div
             className={`h-72 overflow-hidden rounded-xl border sm:h-80 ${
@@ -344,8 +354,9 @@ export default function ReportPage() {
           >
             <LocationPicker
               value={pin}
-              focus={mapFocus}
+              focus={focus}
               userLocation={userCoords}
+              locating={location.status === "pending"}
               onChange={(p) => {
                 setPin(p);
                 setErrors((er) => ({ ...er, pin: undefined }));
@@ -368,8 +379,8 @@ export default function ReportPage() {
                 {location.status === "pending"
                   ? "Finding your location…"
                   : userCoords
-                    ? "Map is centered on you (blue dot)."
-                    : "Location is off, so the map shows the city center."}
+                    ? "The blue dot shows where you are."
+                    : "Location is off, so the map shows the city center. Tap the map to drop a pin."}
               </span>
             )}
           </p>

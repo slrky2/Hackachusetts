@@ -10,7 +10,7 @@ import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
 import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
 import { usePosts } from "@/lib/hooks/usePosts";
-import { useUserLocation } from "@/lib/hooks/useUserLocation";
+import { coordsOf, useUserLocation } from "@/lib/hooks/useUserLocation";
 import { severityBadgeClass } from "@/lib/utils/severity";
 
 export default function Home() {
@@ -20,7 +20,7 @@ export default function Home() {
   // Center the map on the user (blue dot + accuracy circle) once the browser
   // shares their location; otherwise it stays on the city center.
   const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
-  const userCoords = "coords" in location ? location.coords : null;
+  const userCoords = coordsOf(location);
   // Which map pin is focused; shared by the map, ticket list, and feed.
   const [selectedId, setSelectedId] = useState<string | null>(null);
 

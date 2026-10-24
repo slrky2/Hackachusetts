@@ -12,26 +12,30 @@ import {
 import { APP_CONFIG, MAP_CONFIG } from "@/config/app";
 import type { LatLng, UserPosition } from "@/lib/maps";
 import MapErrorBoundary from "./MapErrorBoundary";
+import { CenterOnceOn, MyLocationButton, PinMyLocationButton } from "./MapLocationControls";
 import UserLocationMarker from "./UserLocationMarker";
 
 interface LocationPickerProps {
   value: LatLng | null;
   onChange: (position: LatLng) => void;
-  /** Map pans here when it changes (e.g. after "Use my location"). */
+  /** Map pans here when it changes (e.g. after "Use my location" below the map). */
   focus?: LatLng | null;
   /** Shows Google's blue "you are here" dot and accuracy circle. */
   userLocation?: UserPosition | null;
+  /** Still waiting on the browser's location (shows "Finding you…"). */
+  locating?: boolean;
 }
 
 /**
- * Map for choosing where a problem is. Click anywhere to drop a pin,
- * then drag the pin to fine-tune it.
+ * Map for choosing where a problem is. Click anywhere to drop a pin, drag it
+ * to fine-tune, or press "Pin my location" to drop it on the blue dot.
  */
 export default function LocationPicker({
   value,
   onChange,
   focus = null,
   userLocation = null,
+  locating = false,
 }: LocationPickerProps) {
   if (!MAP_CONFIG.apiKey) {
     return (
@@ -73,7 +77,12 @@ export default function LocationPicker({
           </AdvancedMarker>
         )}
         {userLocation && <UserLocationMarker position={userLocation} />}
+        {/* Start on the user, unless they already dropped a pin. */}
+        <CenterOnceOn position={value ? null : userLocation} zoom={17} />
         <PanTo position={focus} />
+        {/* Hidden when location is off; the note under the map explains why. */}
+        {(userLocation || locating) && <PinMyLocationButton position={userLocation} onPin={onChange} />}
+        <MyLocationButton position={userLocation} zoom={17} />
       </Map>
     </APIProvider>
     </MapErrorBoundary>
