@@ -9,6 +9,11 @@ export interface LatLng {
   lng: number;
 }
 
+/** The user's position from the browser, with its accuracy radius in meters. */
+export interface UserPosition extends LatLng {
+  accuracy?: number;
+}
+
 /**
  * Convert a human-readable address to coordinates using the Maps Geocoding API.
  * Requires NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to be set.

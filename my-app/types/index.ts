@@ -179,7 +179,6 @@ export interface CityTicket {
   title: string;
   category: string;
   severity: TicketSeverity;
-  reward: string;
   location: string;
   lat: number;
   lng: number;
@@ -191,7 +190,9 @@ export type PostKind =
   | "alert"
   | "community"
   | "lost_found"
-  | "volunteer";
+  | "volunteer"
+  /** Auto-created when a resident files a report. */
+  | "report";
 
 export interface PostAuthor {
   name: string;
@@ -227,6 +228,12 @@ export interface CityPost {
   /** "Thanks" count, or "Going" count for posts with `when`. */
   reactions: number;
   hasReacted: boolean;
+  /** Set on posts made from a report; links the post to that report's map pin. */
+  issueId?: number;
+  /** The report's own photos (served from /api/issues/photos/:id). */
+  photoUrls?: string[];
+  /** True when the current viewer wrote it. */
+  isMine?: boolean;
 }
 
 /** A comment on a report, as returned to the client (no author ids exposed). */
@@ -241,6 +248,12 @@ export interface IssueComment {
 
 /** A ticket plus community activity, as served by GET /api/issues. */
 export interface CityReport extends CityTicket {
+  description: string;
+  /** Served from /api/issues/photos/:photoId. */
+  photoUrls: string[];
+  authorName: string;
+  /** True when the current viewer filed it. */
+  isMine: boolean;
   reportedAt: string;
   upvotes: number;
   /** Whether the current viewer has upvoted it. */

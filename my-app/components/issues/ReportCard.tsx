@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { timeAgo } from "@/lib/utils";
+import RelativeTime from "@/components/ui/RelativeTime";
 import { severityBadgeClass } from "@/lib/utils/severity";
 import type { CityReport } from "@/types";
 
@@ -92,15 +92,32 @@ export default function ReportCard({
             <span>{report.location}</span>
           </div>
 
-          <button
-            type="button"
-            onClick={onSelect}
-            className="mt-1.5 text-left text-sm font-semibold leading-snug hover:text-emerald-600 hover:underline"
-          >
-            {report.title}
-          </button>
+          <div className="mt-1.5 flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={onSelect}
+                className="text-left text-sm font-semibold leading-snug hover:text-emerald-600 hover:underline"
+              >
+                {report.title}
+              </button>
+              <p className="mt-1 text-xs text-zinc-500">
+                By {report.isMine ? "you" : report.authorName} ·{" "}
+                <RelativeTime iso={report.reportedAt} />
+              </p>
+            </div>
+            {report.photoUrls[0] && (
+              // eslint-disable-next-line @next/next/no-img-element -- served from our in-memory API
+              <img
+                src={report.photoUrls[0]}
+                alt={`Photo of: ${report.title}`}
+                loading="lazy"
+                className="h-14 w-14 shrink-0 rounded-lg object-cover"
+              />
+            )}
+          </div>
 
-          <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="mt-2">
             <button
               type="button"
               onClick={onSelect}
@@ -110,15 +127,13 @@ export default function ReportCard({
             >
               💬 {commentCount} {commentCount === 1 ? "comment" : "comments"}
             </button>
-            <span className="rounded-lg bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-              {report.reward}
-            </span>
           </div>
         </div>
       </div>
 
       {isSelected && (
         <div id={commentsId} className="mt-4 border-t border-black/5 pt-3 dark:border-white/10">
+          <p className="mb-3 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">{report.description}</p>
           {commentCount === 0 ? (
             <p className="text-xs text-zinc-500">No comments yet. Add what you&apos;ve seen.</p>
           ) : (
@@ -129,7 +144,7 @@ export default function ReportCard({
                     <span className="font-semibold">
                       {comment.isMine ? "You" : comment.authorName}
                     </span>
-                    <span className="text-xs text-zinc-400">{timeAgo(comment.createdAt)}</span>
+                    <RelativeTime iso={comment.createdAt} className="text-xs text-zinc-400" />
                   </div>
                   <p className="text-zinc-700 dark:text-zinc-300">{comment.text}</p>
                 </li>

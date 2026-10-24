@@ -35,7 +35,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Pothole on Merrimack St near City Hall",
       category: "Roads",
       severity: "High",
-      reward: "$120",
       location: "Downtown",
       lat: 42.6461,
       lng: -71.3105,
@@ -53,7 +52,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Broken streetlight on the canalway by Boott Mills",
       category: "Lighting",
       severity: "Medium",
-      reward: "$60",
       location: "Boott Mills",
       lat: 42.6472,
       lng: -71.3138,
@@ -68,7 +66,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Overflowing trash bins at Kearney Square",
       category: "Sanitation",
       severity: "Medium",
-      reward: "$45",
       location: "Kearney Square",
       lat: 42.6441,
       lng: -71.3076,
@@ -83,7 +80,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Graffiti on the Bridge St underpass",
       category: "Vandalism",
       severity: "Low",
-      reward: "$30",
       location: "Centralville",
       lat: 42.6505,
       lng: -71.3058,
@@ -98,7 +94,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Fallen tree blocking the Pawtucket Blvd bike path",
       category: "Parks",
       severity: "High",
-      reward: "$150",
       location: "Pawtucket Falls",
       lat: 42.6545,
       lng: -71.3310,
@@ -113,7 +108,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Faded crosswalk at Broadway & Dummer St",
       category: "Roads",
       severity: "Low",
-      reward: "$40",
       location: "The Acre",
       lat: 42.6462,
       lng: -71.3195,
@@ -128,7 +122,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Flooded sidewalk on Gorham St after rain",
       category: "Drainage",
       severity: "Medium",
-      reward: "$70",
       location: "Back Central",
       lat: 42.6350,
       lng: -71.3060,
@@ -143,7 +136,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Missing stop sign at Westford & Stevens St",
       category: "Traffic",
       severity: "High",
-      reward: "$90",
       location: "Highlands",
       lat: 42.6385,
       lng: -71.3330,
@@ -158,12 +150,30 @@ export const SEED_ISSUES: SeedIssue[] = [
 export function seedReports(): CityReport[] {
   return SEED_ISSUES.map((seed) => ({
     ...seed.ticket,
+    description: seed.ticket.title,
+    photoUrls: [],
+    authorName: seedReporterName(seed.ticket.id),
+    isMine: false,
     reportedAt: seed.reportedAt,
     upvotes: seed.upvotes,
     hasUpvoted: false,
     comments: seed.comments,
   }));
 }
+
+// Who "filed" each seed report (seed reports have no real author).
+const SEED_REPORTERS = [
+  "downtown_commuter",
+  "riverwalk_runner",
+  "kearney_shopkeeper",
+  "centralville_neighbor",
+  "umass_cyclist",
+  "acre_neighbor",
+  "back_central_resident",
+  "highlands_parent",
+];
+export const seedReporterName = (issueId: number) =>
+  SEED_REPORTERS[(issueId - 1) % SEED_REPORTERS.length];
 
 // ─── Feed posts ───────────────────────────────────────────────────────────────
 // Mock content for the demo. Photos are openly licensed from Wikimedia Commons;
@@ -415,9 +425,10 @@ export function buildMarkers(reports: CityReport[], posts: CityPost[]): CityMark
       lng: report.lng,
       report,
     })),
-    // Citywide posts have no coords, so they stay in the feed only.
+    // Citywide posts have no coords, so they stay in the feed only. Posts made
+    // from a report reuse the report's pin instead of adding a second one.
     ...posts.flatMap((post) =>
-      post.coords
+      post.coords && post.issueId === undefined
         ? [{ id: postMarkerId(post.id), kind: "post" as const, ...post.coords, post }]
         : [],
     ),

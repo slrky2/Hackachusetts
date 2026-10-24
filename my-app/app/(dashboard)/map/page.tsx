@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import ReportCard from "@/components/issues/ReportCard";
 import CivicMap from "@/components/map/CivicMap";
@@ -20,7 +21,7 @@ const CITY_NAME = APP_CONFIG.defaultCity.split(",")[0];
  * right with priority filters, upvotes, and comments.
  */
 export default function MapPage() {
-  const { reports, error, toggleUpvote, addComment } = useIssues();
+  const { reports, error, isLive, toggleUpvote, addComment } = useIssues();
   const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<PriorityFilter>("All");
@@ -95,10 +96,23 @@ export default function MapPage() {
         </div>
 
         <ul className="space-y-3 px-4 py-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-          {visible.length === 0 && (
-            <li className="py-8 text-center text-sm text-zinc-500">
-              No {filter.toLowerCase()} priority problems right now.
+          {!isLive ? (
+            <li role="status" className="py-8 text-center text-sm text-zinc-500">
+              Loading reports…
             </li>
+          ) : reports.length === 0 ? (
+            <li className="py-8 text-center text-sm text-zinc-500">
+              No problems reported yet.{" "}
+              <Link href="/report" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                Report one
+              </Link>
+            </li>
+          ) : (
+            visible.length === 0 && (
+              <li className="py-8 text-center text-sm text-zinc-500">
+                No {filter.toLowerCase()} priority problems right now.
+              </li>
+            )
           )}
           {visible.map((report) => {
             const markerId = issueMarkerId(report.id);

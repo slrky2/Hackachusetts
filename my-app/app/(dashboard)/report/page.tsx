@@ -3,11 +3,24 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import LocationPicker from "@/components/map/LocationPicker";
+import { APP_CONFIG } from "@/config/app";
+import { useIssues } from "@/lib/hooks/useIssues";
+import { useUserLocation } from "@/lib/hooks/useUserLocation";
 import type { LatLng } from "@/lib/maps";
+import { photoToJpegDataUrl } from "@/lib/utils/image";
+import { REPORT_CATEGORIES, REPORT_LIMITS, type ReportCategory } from "@/lib/utils/report";
+import { SEVERITY_LEVELS } from "@/lib/utils/severity";
+import type { TicketSeverity } from "@/types";
 
-const MAX_PHOTOS = 5;
-const MIN_DESCRIPTION = 10;
-const MAX_DESCRIPTION = 2000;
+const MAX_PHOTOS = REPORT_LIMITS.maxPhotos;
+const MIN_DESCRIPTION = REPORT_LIMITS.minDescription;
+const MAX_DESCRIPTION = REPORT_LIMITS.maxDescription;
+
+const SEVERITY_HINTS: Record<TicketSeverity, string> = {
+  High: "Dangerous or blocking",
+  Medium: "Needs fixing soon",
+  Low: "Minor or cosmetic",
+};
 
 interface Photo {
   id: string;
@@ -26,8 +39,20 @@ export default function ReportPage() {
   const [focus, setFocus] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
+  const [category, setCategory] = useState<ReportCategory>("Roads");
+  const [severity, setSeverity] = useState<TicketSeverity>("Medium");
   const [errors, setErrors] = useState<{ description?: string; pin?: string }>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const { createReport } = useIssues();
+
+  // Center the map on the user as soon as the browser shares their location.
+  const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
+  const userCoords = "coords" in location ? location.coords : null;
+  // An explicit focus ("Use my location") wins. Otherwise default to the user,
+  // unless they've already dropped a pin (don't yank the map away from it).
+  const mapFocus = focus ?? (pin ? null : userCoords);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Free photo preview memory when leaving the page.
@@ -82,18 +107,41 @@ export default function ReportPage() {
     );
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submitting) return;
     const next: typeof errors = {};
     if (description.trim().length < MIN_DESCRIPTION) {
       next.description = `Please describe the issue in at least ${MIN_DESCRIPTION} characters.`;
     }
     if (!pin) next.pin = "Tap the map to drop a pin where the problem is.";
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    if (Object.keys(next).length > 0 || !pin) return;
 
-    // TODO: upload photos and save the report via POST /api/issues.
-    setSubmitted(true);
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      let encoded: string[];
+      try {
+        encoded = await Promise.all(photos.map((p) => photoToJpegDataUrl(p.file)));
+      } catch {
+        throw new Error("One of your photos couldn't be read. Try removing it or using a JPEG or PNG.");
+      }
+      await createReport({
+        description: description.trim(),
+        category,
+        severity,
+        lat: pin.lat,
+        lng: pin.lng,
+        locationDetails: locationDetails.trim() || undefined,
+        photos: encoded,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Couldn't submit your report.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function reset() {
@@ -102,7 +150,10 @@ export default function ReportPage() {
     setDescription("");
     setPin(null);
     setLocationDetails("");
+    setCategory("Roads");
+    setSeverity("Medium");
     setErrors({});
+    setSubmitError(null);
     setSubmitted(false);
   }
 
@@ -114,21 +165,29 @@ export default function ReportPage() {
             ✓
           </div>
           <h1 className="text-xl font-bold">Report submitted</h1>
-          <p className="mt-2 text-sm text-zinc-500">Thanks for helping improve the city.</p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Thanks for helping improve the city. It&apos;s now on the home feed, in City Problems, and on the map.
+          </p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <button
-              type="button"
-              onClick={reset}
+            <Link
+              href="/"
               className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
-              Report another
-            </button>
+              See it on Home
+            </Link>
             <Link
               href="/map"
               className="rounded-full border border-emerald-600 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
             >
               View map
             </Link>
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-full px-5 py-2 text-sm font-semibold text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
+            >
+              Report another
+            </button>
           </div>
         </div>
       </div>
@@ -215,6 +274,54 @@ export default function ReportPage() {
           </div>
         </section>
 
+        {/* TYPE + URGENCY */}
+        <section className={sectionClass} aria-labelledby="details-heading">
+          <h2 id="details-heading" className="mb-3 text-lg font-bold">Details</h2>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Category</span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as ReportCategory)}
+              className="rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/15 dark:bg-zinc-800"
+            >
+              {REPORT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <fieldset className="mt-4">
+            <legend className="text-sm font-medium">How urgent is it?</legend>
+            <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
+              {SEVERITY_LEVELS.map((level) => (
+                <label
+                  key={level}
+                  className={`cursor-pointer rounded-lg border px-3 py-2 text-sm transition-colors focus-within:ring-2 focus-within:ring-emerald-500 ${
+                    severity === level
+                      ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-500/10"
+                      : "border-black/10 hover:bg-black/[.03] dark:border-white/15 dark:hover:bg-white/[.04]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="severity"
+                    value={level}
+                    checked={severity === level}
+                    onChange={() => setSeverity(level)}
+                    className="sr-only"
+                  />
+                  <span className="block font-semibold">{level}</span>
+                  <span className="block text-xs text-zinc-500">
+                    {SEVERITY_HINTS[level]}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </section>
+
         {/* WHERE */}
         <section className={sectionClass} aria-labelledby="where-heading">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -237,7 +344,8 @@ export default function ReportPage() {
           >
             <LocationPicker
               value={pin}
-              focus={focus}
+              focus={mapFocus}
+              userLocation={userCoords}
               onChange={(p) => {
                 setPin(p);
                 setErrors((er) => ({ ...er, pin: undefined }));
@@ -255,7 +363,14 @@ export default function ReportPage() {
                 Pin at {pin.lat.toFixed(5)}, {pin.lng.toFixed(5)}
               </span>
             ) : (
-              <span className="text-zinc-500">No pin yet.</span>
+              <span className="text-zinc-500">
+                No pin yet.{" "}
+                {location.status === "pending"
+                  ? "Finding your location…"
+                  : userCoords
+                    ? "Map is centered on you (blue dot)."
+                    : "Location is off, so the map shows the city center."}
+              </span>
             )}
           </p>
 
@@ -274,11 +389,18 @@ export default function ReportPage() {
           </label>
         </section>
 
+        {submitError && (
+          <p role="alert" className="text-center text-sm text-red-600">
+            {submitError}
+          </p>
+        )}
+
         <button
           type="submit"
-          className="rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-transform hover:scale-[1.01] active:scale-95"
+          disabled={submitting}
+          className="rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-transform hover:scale-[1.01] active:scale-95 disabled:cursor-wait disabled:opacity-70 disabled:hover:scale-100"
         >
-          Submit report
+          {submitting ? "Submitting…" : "Submit report"}
         </button>
       </form>
     </div>

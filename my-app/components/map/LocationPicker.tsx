@@ -10,20 +10,29 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { APP_CONFIG, MAP_CONFIG } from "@/config/app";
-import type { LatLng } from "@/lib/maps";
+import type { LatLng, UserPosition } from "@/lib/maps";
+import MapErrorBoundary from "./MapErrorBoundary";
+import UserLocationMarker from "./UserLocationMarker";
 
 interface LocationPickerProps {
   value: LatLng | null;
   onChange: (position: LatLng) => void;
   /** Map pans here when it changes (e.g. after "Use my location"). */
   focus?: LatLng | null;
+  /** Shows Google's blue "you are here" dot and accuracy circle. */
+  userLocation?: UserPosition | null;
 }
 
 /**
  * Map for choosing where a problem is. Click anywhere to drop a pin,
  * then drag the pin to fine-tune it.
  */
-export default function LocationPicker({ value, onChange, focus = null }: LocationPickerProps) {
+export default function LocationPicker({
+  value,
+  onChange,
+  focus = null,
+  userLocation = null,
+}: LocationPickerProps) {
   if (!MAP_CONFIG.apiKey) {
     return (
       <div className="grid h-full place-items-center p-6 text-center text-sm text-zinc-500">
@@ -33,6 +42,7 @@ export default function LocationPicker({ value, onChange, focus = null }: Locati
   }
 
   return (
+    <MapErrorBoundary>
     <APIProvider apiKey={MAP_CONFIG.apiKey}>
       <Map
         className="h-full w-full"
@@ -62,9 +72,11 @@ export default function LocationPicker({ value, onChange, focus = null }: Locati
             <Pin background="#dc2626" borderColor="#ffffff" glyphColor="#ffffff" scale={1.2} />
           </AdvancedMarker>
         )}
+        {userLocation && <UserLocationMarker position={userLocation} />}
         <PanTo position={focus} />
       </Map>
     </APIProvider>
+    </MapErrorBoundary>
   );
 }
 
