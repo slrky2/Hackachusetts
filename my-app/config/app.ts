@@ -4,11 +4,7 @@ export const APP_CONFIG = {
   name: "CivicConnect",
   tagline: "Your neighborhood, connected.",
   defaultCity: "Lowell, MA",
-<<<<<<< Updated upstream
   defaultMapCenter: { lat: 42.6430, lng: -71.3150 }, // Lowell, MA
-=======
-  defaultMapCenter: { lat: 42.6334, lng: -71.3162 }, // Lowell
->>>>>>> Stashed changes
   defaultMapZoom: 13,
   // Users within this radius of the city center get the map centered on them.
   localAreaRadiusKm: 15,
