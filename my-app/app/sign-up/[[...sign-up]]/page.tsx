@@ -20,7 +20,7 @@ export default function SignUpPage() {
           `cacheComponents: true` in next.config.ts needs that suspended. */}
       <Suspense>
         <SignUp
-          signInUrl="/login"
+          signInUrl="/sign-in"
           fallbackRedirectUrl="/"
           appearance={{
             variables: {
