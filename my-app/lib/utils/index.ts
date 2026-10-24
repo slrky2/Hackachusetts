@@ -7,8 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** Format a date string to a human-readable relative time */
-export function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+export function timeAgo(dateStr: string, now: number = Date.now()): string {
+  const diff = now - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60_000);
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;

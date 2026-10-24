@@ -87,6 +87,8 @@ my-app/
 │       ├── bounties/             # Bounty creation + claiming
 │       ├── chatbot/              # OpenAI chat completions proxy
 │       ├── map/                  # Map pin queries (supports bounding box)
+│       ├── posts/                # GET feed posts (per-viewer reaction state)
+│       │   └── [postId]/react/   # POST — toggle "Thanks" / "Going"
 │       └── notifications/        # User notifications
 │
 ├── components/                   # React components
@@ -116,12 +118,17 @@ my-app/
 │   │   ├── ChatInterface.tsx     # Full chat UI (bubble layout + send bar)
 │   │   └── DietaryPrefsModal.tsx # Allergen + dietary restriction picker
 │   │
+│   ├── feed/
+│   │   ├── CommunityFeed.tsx     # "Around Lowell" feed with type filters
+│   │   └── PostCard.tsx          # Post: official badge, type tag, photo + credit, Thanks/Going
+│   │
 │   ├── notifications/
 │   │   └── NotificationBell.tsx  # Bell icon with unread badge
 │   │
 │   ├── auth/                     # Login/register form components
 │   ├── profile/                  # User profile display components
-│   └── ui/                       # Shared primitive components (buttons, inputs…)
+│   └── ui/                       # Shared primitive components
+│       └── RelativeTime.tsx      # Hydration-safe "3h ago" timestamps
 │
 ├── lib/                          # Non-UI logic and utilities
 │   ├── api/
@@ -136,6 +143,7 @@ my-app/
 │   ├── hooks/
 │   │   ├── useAuth.ts            # SWR hook for current session
 │   │   ├── useIssues.ts          # SWR reports + optimistic upvote, addComment
+│   │   ├── usePosts.ts           # SWR feed posts + optimistic reactions
 │   │   ├── useUserLocation.ts    # Browser geolocation, in/out of city area
 │   │   └── useBounties.ts        # SWR hook for bounties
 │   ├── maps/
