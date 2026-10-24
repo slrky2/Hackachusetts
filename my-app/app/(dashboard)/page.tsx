@@ -6,6 +6,7 @@ import CommunityFeed from "@/components/feed/CommunityFeed";
 import CivicMap from "@/components/map/CivicMap";
 import MapLegend from "@/components/map/MapLegend";
 import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
+import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
 import { usePosts } from "@/lib/hooks/usePosts";
 import { severityBadgeClass, sortByPriority } from "@/lib/utils/severity";
@@ -13,10 +14,11 @@ import { severityBadgeClass, sortByPriority } from "@/lib/utils/severity";
 export default function Home() {
   const { reports } = useIssues();
   const { posts, isLive: postsLive, toggleReaction } = usePosts();
+  const { bounties } = useBounties();
   // Which map pin is focused; shared by the map, ticket list, and feed.
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const markers = useMemo(() => buildMarkers(reports, posts), [reports, posts]);
+  const markers = useMemo(() => buildMarkers(reports, posts, bounties), [reports, posts, bounties]);
   const tickets = useMemo(() => sortByPriority(reports), [reports]);
 
   return (
@@ -87,8 +89,9 @@ export default function Home() {
                         <span>▲ {ticket.upvotes}</span>
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white">
-                      {ticket.reward}
+                    {/* Repairs like these need city equipment, so city crews handle them. */}
+                    <span className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                      🏛 City crew
                     </span>
                   </button>
                 </li>

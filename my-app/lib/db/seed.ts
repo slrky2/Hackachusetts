@@ -1,4 +1,4 @@
-import type { CityMarker, CityPost, CityReport, CityTicket, IssueComment } from "@/types";
+import type { Bounty, CityMarker, CityPost, CityReport, CityTicket, IssueComment } from "@/types";
 
 /**
  * In-memory seed data for the POC, placed around Lowell, MA
@@ -35,7 +35,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Pothole on Merrimack St near City Hall",
       category: "Roads",
       severity: "High",
-      reward: "$120",
       location: "Downtown",
       lat: 42.6461,
       lng: -71.3105,
@@ -53,7 +52,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Broken streetlight on the canalway by Boott Mills",
       category: "Lighting",
       severity: "Medium",
-      reward: "$60",
       location: "Boott Mills",
       lat: 42.6472,
       lng: -71.3138,
@@ -68,7 +66,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Overflowing trash bins at Kearney Square",
       category: "Sanitation",
       severity: "Medium",
-      reward: "$45",
       location: "Kearney Square",
       lat: 42.6441,
       lng: -71.3076,
@@ -83,7 +80,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Graffiti on the Bridge St underpass",
       category: "Vandalism",
       severity: "Low",
-      reward: "$30",
       location: "Centralville",
       lat: 42.6505,
       lng: -71.3058,
@@ -98,7 +94,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Fallen tree blocking the Pawtucket Blvd bike path",
       category: "Parks",
       severity: "High",
-      reward: "$150",
       location: "Pawtucket Falls",
       lat: 42.6545,
       lng: -71.3310,
@@ -113,7 +108,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Faded crosswalk at Broadway & Dummer St",
       category: "Roads",
       severity: "Low",
-      reward: "$40",
       location: "The Acre",
       lat: 42.6462,
       lng: -71.3195,
@@ -128,7 +122,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Flooded sidewalk on Gorham St after rain",
       category: "Drainage",
       severity: "Medium",
-      reward: "$70",
       location: "Back Central",
       lat: 42.6350,
       lng: -71.3060,
@@ -143,7 +136,6 @@ export const SEED_ISSUES: SeedIssue[] = [
       title: "Missing stop sign at Westford & Stevens St",
       category: "Traffic",
       severity: "High",
-      reward: "$90",
       location: "Highlands",
       lat: 42.6385,
       lng: -71.3330,
@@ -404,10 +396,18 @@ export function fallbackPosts(): CityPost[] {
 
 export const issueMarkerId = (id: number) => `issue-${id}`;
 export const postMarkerId = (id: number) => `post-${id}`;
+export const bountyMarkerId = (id: number) => `bounty-${id}`;
 
-/** Flatten reports and located posts into the marker list the map renders. */
-export function buildMarkers(reports: CityReport[], posts: CityPost[]): CityMarker[] {
-  return [
+/**
+ * Flatten reports, located posts and bounties into the marker list the map
+ * renders. Bounties get a pin when they have a location and aren't paid yet.
+ */
+export function buildMarkers(
+  reports: CityReport[],
+  posts: CityPost[],
+  bounties: Bounty[] = [],
+): CityMarker[] {
+  const markers: CityMarker[] = [
     ...reports.map((report) => ({
       id: issueMarkerId(report.id),
       kind: "issue" as const,
@@ -422,4 +422,16 @@ export function buildMarkers(reports: CityReport[], posts: CityPost[]): CityMark
         : [],
     ),
   ];
+
+  for (const bounty of bounties) {
+    if (bounty.status === "paid" || bounty.lat === null || bounty.lng === null) continue;
+    markers.push({
+      id: bountyMarkerId(bounty.id),
+      kind: "bounty",
+      lat: bounty.lat,
+      lng: bounty.lng,
+      bounty,
+    });
+  }
+  return markers;
 }
