@@ -4,7 +4,11 @@ export const APP_CONFIG = {
   name: "CivicConnect",
   tagline: "Your neighborhood, connected.",
   defaultCity: "Lowell, MA",
+<<<<<<< Updated upstream
   defaultMapCenter: { lat: 42.6430, lng: -71.3150 }, // Lowell, MA
+=======
+  defaultMapCenter: { lat: 42.6334, lng: -71.3162 }, // Lowell
+>>>>>>> Stashed changes
   defaultMapZoom: 13,
   // Users within this radius of the city center get the map centered on them.
   localAreaRadiusKm: 15,
@@ -36,9 +40,11 @@ export const MAP_CONFIG = {
 } as const;
 
 export const AI_CONFIG = {
-  // Set OPENAI_API_KEY in .env.local
-  model: "gpt-4o-mini",
-  systemPromptPath: "@/lib/ai/prompts/chatbot.ts",
+  // Set ANTHROPIC_API_KEY in my-app/.env.local (shared with scripts/chatbot.py)
+  model: "claude-sonnet-5-5",
+  maxTokens: 1024,
+  // Knowledge base path, relative to the app directory (my-app/data/Lowell.md)
+  knowledgeBaseFile: "data/Lowell.md",
 } as const;
 
 export const BOUNTY_CONFIG = {
