@@ -57,10 +57,11 @@ my-app/
 │   │   ├── register/
 │   │   └── forgot-password/
 │   │
-│   ├── (dashboard)/              # Protected routes — share Sidebar + TopNav layout
-│   │   ├── layout.tsx            # Dashboard shell (sidebar + top nav)
+│   ├── (dashboard)/              # Main app routes — share the TopNav layout
+│   │   ├── layout.tsx            # Dashboard shell (top nav + full-height content)
+│   │   ├── page.tsx              # Home (/): feed, mini map, City Problems list
 │   │   ├── feed/                 # Community activity feed
-│   │   ├── map/                  # Interactive Google Maps view
+│   │   ├── map/                  # Map view: your area + problems list w/ upvotes & comments
 │   │   ├── channels/             # Channel directory
 │   │   │   └── [channelId]/      # Individual channel message thread
 │   │   ├── issues/               # Civic issue tracker list
@@ -79,7 +80,10 @@ my-app/
 │       ├── auth/                 # Login / register / session
 │       ├── users/                # User CRUD + profile updates
 │       ├── channels/             # Channel management
-│       ├── issues/               # Issue reporting + status updates
+│       ├── issues/               # GET reports (per-viewer vote state), POST new report
+│       │   └── [issueId]/
+│       │       ├── upvote/       # POST — toggle the viewer's upvote
+│       │       └── comments/     # POST — add a comment
 │       ├── bounties/             # Bounty creation + claiming
 │       ├── chatbot/              # OpenAI chat completions proxy
 │       ├── map/                  # Map pin queries (supports bounding box)
@@ -88,14 +92,16 @@ my-app/
 ├── components/                   # React components
 │   ├── layout/
 │   │   ├── Sidebar.tsx           # Main nav sidebar with route links
-│   │   └── TopNav.tsx            # Top bar: search, notifications, user menu
+│   │   └── TopNav.tsx            # Top bar: logo, Home/Map/Report/Bounties/Chat nav, sign in
 │   │
 │   ├── map/
-│   │   ├── CivicMap.tsx          # Google Maps wrapper with issue pins
+│   │   ├── CivicMap.tsx          # Google Map: issue/post pins, info windows, "you are here" dot
+│   │   ├── MapLegend.tsx         # Pin color key
 │   │   ├── IssueMarker.tsx       # Colored map marker by category/status
 │   │   └── ReportIssueDrawer.tsx # Slide-in drawer to file a report at a location
 │   │
 │   ├── issues/
+│   │   ├── ReportCard.tsx        # Problem card with upvote + comment thread
 │   │   ├── IssueCard.tsx         # Summary card for the issue list
 │   │   └── CreateIssueForm.tsx   # Form to submit a new civic issue
 │   │
@@ -124,10 +130,13 @@ my-app/
 │   │   └── prompts/
 │   │       └── chatbot.ts        # Builds the OpenAI system prompt with city + dietary context
 │   ├── db/
-│   │   └── index.ts              # DB client stub (swap with Prisma / Drizzle / Supabase)
+│   │   ├── index.ts              # DB client stub (swap with Prisma / Drizzle / Supabase)
+│   │   ├── seed.ts               # Mock Lowell, MA reports + posts, marker builder
+│   │   └── store.ts              # In-memory server store: reports, upvotes, comments
 │   ├── hooks/
 │   │   ├── useAuth.ts            # SWR hook for current session
-│   │   ├── useIssues.ts          # SWR hook for civic issues
+│   │   ├── useIssues.ts          # SWR reports + optimistic upvote, addComment
+│   │   ├── useUserLocation.ts    # Browser geolocation, in/out of city area
 │   │   └── useBounties.ts        # SWR hook for bounties
 │   ├── maps/
 │   │   └── index.ts              # Geocoding + reverse-geocoding helpers
@@ -136,7 +145,8 @@ my-app/
 │   │   ├── issue.ts              # Zod schema: createIssueSchema
 │   │   └── bounty.ts             # Zod schema: createBountySchema
 │   └── utils/
-│       └── index.ts              # cn(), timeAgo(), truncate(), formatCategory()
+│       ├── index.ts              # cn(), timeAgo(), truncate(), formatCategory()
+│       └── severity.ts           # Priority colors, badge styles, sortByPriority()
 │
 ├── types/
 │   └── index.ts                  # All shared TypeScript types:
