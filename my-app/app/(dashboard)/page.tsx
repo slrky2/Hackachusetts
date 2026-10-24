@@ -5,27 +5,34 @@ import Link from "next/link";
 import CommunityFeed from "@/components/feed/CommunityFeed";
 import CivicMap from "@/components/map/CivicMap";
 import MapLegend from "@/components/map/MapLegend";
+import { APP_CONFIG } from "@/config/app";
 import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
 import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
 import { usePosts } from "@/lib/hooks/usePosts";
-import { severityBadgeClass, sortByPriority } from "@/lib/utils/severity";
+import { coordsOf, useUserLocation } from "@/lib/hooks/useUserLocation";
+import { severityBadgeClass } from "@/lib/utils/severity";
 
 export default function Home() {
-  const { reports } = useIssues();
+  const { reports, isLive } = useIssues();
   const { posts, isLive: postsLive, toggleReaction } = usePosts();
   const { bounties } = useBounties();
+  // Center the map on the user (blue dot + accuracy circle) once the browser
+  // shares their location; otherwise it stays on the city center.
+  const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
+  const userCoords = coordsOf(location);
   // Which map pin is focused; shared by the map, ticket list, and feed.
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const markers = useMemo(() => buildMarkers(reports, posts, bounties), [reports, posts, bounties]);
-  const tickets = useMemo(() => sortByPriority(reports), [reports]);
+  // Newest first (the server's order), so freshly filed reports sit on top.
+  const tickets = reports;
 
   return (
     // Feed left, map + tickets right. Stacks on small screens,
     // splits 50/50 and fills the viewport height on large screens.
     <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
-      {/* LEFT: feed */}
+      {/* LEFT: feed (city updates, neighbors' posts, and a post per new report) */}
       <section
         aria-label="Community feed"
         className="min-w-0 overflow-y-auto border-black/5 px-4 py-6 sm:px-6 lg:border-r dark:border-white/10"
@@ -51,7 +58,13 @@ export default function Home() {
             <MapLegend />
           </div>
           <div className="relative min-h-0 flex-1">
-            <CivicMap markers={markers} selectedId={selectedId} onSelect={setSelectedId} />
+            <CivicMap
+              markers={markers}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              defaultZoom={15}
+              userLocation={userCoords}
+            />
           </div>
         </section>
 
@@ -63,41 +76,50 @@ export default function Home() {
               {tickets.length} open
             </span>
           </div>
-          <ul className="min-h-0 flex-1 divide-y divide-black/5 overflow-y-auto dark:divide-white/10">
-            {tickets.map((ticket) => {
-              const markerId = issueMarkerId(ticket.id);
-              const isSelected = markerId === selectedId;
-              return (
-                <li key={ticket.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(markerId)}
-                    aria-pressed={isSelected}
-                    className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-black/[.03] dark:hover:bg-white/[.04] ${
-                      isSelected ? "bg-emerald-50 dark:bg-emerald-500/10" : ""
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{ticket.title}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                        <span>{ticket.category}</span>
-                        <span aria-hidden="true">•</span>
-                        <span>{ticket.location}</span>
-                        <span className={`rounded-full px-2 py-0.5 font-medium ${severityBadgeClass(ticket.severity)}`}>
-                          {ticket.severity}
-                        </span>
-                        <span>▲ {ticket.upvotes}</span>
+          {isLive && tickets.length === 0 ? (
+            <p className="px-4 pb-6 pt-2 text-sm text-zinc-500">
+              No problems reported yet.{" "}
+              <Link href="/report" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                Report one
+              </Link>
+            </p>
+          ) : (
+            <ul className="min-h-0 flex-1 divide-y divide-black/5 overflow-y-auto dark:divide-white/10">
+              {tickets.map((ticket) => {
+                const markerId = issueMarkerId(ticket.id);
+                const isSelected = markerId === selectedId;
+                return (
+                  <li key={ticket.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(markerId)}
+                      aria-pressed={isSelected}
+                      className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-black/[.03] dark:hover:bg-white/[.04] ${
+                        isSelected ? "bg-emerald-50 dark:bg-emerald-500/10" : ""
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{ticket.title}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                          <span>{ticket.category}</span>
+                          <span aria-hidden="true">•</span>
+                          <span>{ticket.location}</span>
+                          <span className={`rounded-full px-2 py-0.5 font-medium ${severityBadgeClass(ticket.severity)}`}>
+                            {ticket.severity}
+                          </span>
+                          <span>▲ {ticket.upvotes}</span>
+                        </div>
                       </div>
-                    </div>
-                    {/* Repairs like these need city equipment, so city crews handle them. */}
-                    <span className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                      🏛 City crew
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                      {/* Repairs like these need city equipment, so city crews handle them. */}
+                      <span className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        🏛 City crew
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
       </aside>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import ReportCard from "@/components/issues/ReportCard";
 import CivicMap from "@/components/map/CivicMap";
@@ -8,7 +9,7 @@ import { APP_CONFIG } from "@/config/app";
 import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
 import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
-import { useUserLocation, type UserLocation } from "@/lib/hooks/useUserLocation";
+import { coordsOf, useUserLocation, type UserLocation } from "@/lib/hooks/useUserLocation";
 import { SEVERITY_LEVELS, sortByPriority } from "@/lib/utils/severity";
 import type { TicketSeverity } from "@/types";
 
@@ -21,7 +22,7 @@ const CITY_NAME = APP_CONFIG.defaultCity.split(",")[0];
  * right with priority filters, upvotes, and comments.
  */
 export default function MapPage() {
-  const { reports, error, toggleUpvote, addComment } = useIssues();
+  const { reports, error, isLive, toggleUpvote, addComment } = useIssues();
   const { bounties } = useBounties();
   const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -42,8 +43,8 @@ export default function MapPage() {
     return byLevel;
   }, [reports]);
 
-  // Only center on the user if they're actually near the city.
-  const userCoords = location.status === "in-area" ? location.coords : null;
+  // Always show the blue dot, but only center on it if the user is near the city.
+  const userCoords = coordsOf(location);
 
   function changeFilter(next: PriorityFilter) {
     setFilter(next);
@@ -60,6 +61,7 @@ export default function MapPage() {
           onSelect={setSelectedId}
           defaultZoom={14}
           userLocation={userCoords}
+          centerOnUser={location.status === "in-area"}
         />
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
           <LocationNote location={location} />
@@ -101,10 +103,23 @@ export default function MapPage() {
         </div>
 
         <ul className="space-y-3 px-4 py-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-          {visible.length === 0 && (
-            <li className="py-8 text-center text-sm text-zinc-500">
-              No {filter.toLowerCase()} priority problems right now.
+          {!isLive ? (
+            <li role="status" className="py-8 text-center text-sm text-zinc-500">
+              Loading reports…
             </li>
+          ) : reports.length === 0 ? (
+            <li className="py-8 text-center text-sm text-zinc-500">
+              No problems reported yet.{" "}
+              <Link href="/report" className="font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                Report one
+              </Link>
+            </li>
+          ) : (
+            visible.length === 0 && (
+              <li className="py-8 text-center text-sm text-zinc-500">
+                No {filter.toLowerCase()} priority problems right now.
+              </li>
+            )
           )}
           {visible.map((report) => {
             const markerId = issueMarkerId(report.id);

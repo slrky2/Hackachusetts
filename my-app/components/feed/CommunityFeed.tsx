@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { APP_CONFIG } from "@/config/app";
-import { postMarkerId } from "@/lib/db/seed";
+import { issueMarkerId, postMarkerId } from "@/lib/db/seed";
 import type { CityPost } from "@/types";
 import PostCard from "./PostCard";
 
@@ -11,6 +11,7 @@ const FILTERS = [
   { id: "city", label: "From the city", match: (p: CityPost) => p.author.type === "city" },
   { id: "events", label: "Events", match: (p: CityPost) => Boolean(p.when) },
   { id: "heads-up", label: "Heads up", match: (p: CityPost) => p.kind === "alert" || p.kind === "lost_found" },
+  { id: "reports", label: "Reported problems", match: (p: CityPost) => p.kind === "report" },
   { id: "neighbors", label: "Neighbors", match: (p: CityPost) => p.author.type === "resident" },
 ] as const;
 
@@ -65,7 +66,8 @@ export default function CommunityFeed({ posts, selectedId, showTimes, onSelect, 
       ) : (
         <ul className="flex flex-col gap-6">
           {visible.map((post) => {
-            const markerId = postMarkerId(post.id);
+            // Report posts point at their report's pin; others have their own.
+            const markerId = post.issueId !== undefined ? issueMarkerId(post.issueId) : postMarkerId(post.id);
             return (
               <li key={post.id}>
                 <PostCard
