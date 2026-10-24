@@ -1,8 +1,7 @@
-// TODO: implement registration form
+import { redirect } from "next/navigation";
+
+// Account creation is handled by Clerk at /sign-up.
+// This keeps any old links to /register working.
 export default function RegisterPage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-2xl font-semibold">Create Account — coming soon</h1>
-    </main>
-  );
+  redirect("/sign-up");
 }

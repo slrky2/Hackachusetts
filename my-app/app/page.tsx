@@ -1,5 +1,8 @@
 "use client";
 
+import { UserButton, useAuth } from "@clerk/nextjs";
+import Link from "next/link";
+
 // Instagram-style icons built as inline SVGs so we have no extra dependencies.
 function HomeIcon({ active }: { active?: boolean }) {
   return (
@@ -168,6 +171,9 @@ const NAV_ITEMS = [
 ];
 
 export default function Home() {
+  // Clerk tells us whether someone is signed in.
+  const { isSignedIn } = useAuth();
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-emerald-50 text-zinc-900 dark:from-zinc-950 dark:via-black dark:to-zinc-950 dark:text-zinc-50">
       {/* Top bar: title left, nav center, sign in right */}
@@ -215,12 +221,17 @@ export default function Home() {
 
         {/* Right: sign in */}
         <div className="flex min-w-0 shrink-0 justify-end">
-          <button
-            type="button"
-            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95 sm:px-5"
-          >
-            Sign in / Login
-          </button>
+          {isSignedIn ? (
+            // Clerk's avatar menu (profile, sign out)
+            <UserButton />
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95 sm:px-5"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </header>
 
