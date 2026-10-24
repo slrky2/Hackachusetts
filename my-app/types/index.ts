@@ -168,3 +168,53 @@ export interface Notification {
   link?: string;
   createdAt: string;
 }
+
+// ─── Dashboard (lightweight shapes used by the home page + map) ───────────────
+
+export type TicketSeverity = "High" | "Medium" | "Low";
+
+/** A reported city problem shown in the "City Problems" panel and as a map pin. */
+export interface CityTicket {
+  id: number;
+  title: string;
+  category: string;
+  severity: TicketSeverity;
+  reward: string;
+  location: string;
+  lat: number;
+  lng: number;
+}
+
+/** A community feed post with a location, shown in the feed and as a map pin. */
+export interface CityPost {
+  id: number;
+  author: string;
+  location: string;
+  caption: string;
+  lat: number;
+  lng: number;
+}
+
+/** A comment on a report, as returned to the client (no author ids exposed). */
+export interface IssueComment {
+  id: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+  /** True when the current viewer wrote it. */
+  isMine?: boolean;
+}
+
+/** A ticket plus community activity, as served by GET /api/issues. */
+export interface CityReport extends CityTicket {
+  reportedAt: string;
+  upvotes: number;
+  /** Whether the current viewer has upvoted it. */
+  hasUpvoted: boolean;
+  comments: IssueComment[];
+}
+
+/** Normalized marker the map renders; built from reports and posts. */
+export type CityMarker =
+  | { id: string; kind: "issue"; lat: number; lng: number; report: CityReport }
+  | { id: string; kind: "post"; lat: number; lng: number; post: CityPost };

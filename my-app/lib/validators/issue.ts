@@ -23,3 +23,15 @@ export const createIssueSchema = z.object({
 });
 
 export type CreateIssueInput = z.infer<typeof createIssueSchema>;
+
+// Anonymous per-browser id used for upvotes/comments until real auth exists.
+export const viewerIdSchema = z.uuid();
+
+export const upvoteSchema = z.object({
+  viewerId: viewerIdSchema,
+});
+
+export const commentSchema = z.object({
+  viewerId: viewerIdSchema,
+  text: z.string().trim().min(1, "Comment can't be empty").max(500, "Keep comments under 500 characters"),
+});
