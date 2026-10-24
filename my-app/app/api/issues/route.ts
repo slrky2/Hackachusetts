@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { listReports } from "@/lib/db/store";
+import { viewerIdSchema } from "@/lib/validators/issue";
 
-// GET /api/issues — list issues (supports ?status=open&category=pothole)
+// GET /api/issues?viewerId=<uuid> — all reports with upvote/comment state for that viewer
 export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  const status = searchParams.get("status");
-  const category = searchParams.get("category");
-
-  // TODO: query DB with filters
-  console.log("GET /api/issues", { status, category });
-  return NextResponse.json({ issues: [] });
+  const parsed = viewerIdSchema.safeParse(req.nextUrl.searchParams.get("viewerId"));
+  const viewerId = parsed.success ? parsed.data : null;
+  return NextResponse.json({ reports: listReports(viewerId) });
 }
 
 // POST /api/issues — create a new issue report
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  // TODO: validate with createIssueSchema, persist to DB, award points
+  // TODO: validate with createIssueSchema, persist to the store, award points
   console.log("POST /api/issues", body);
   return NextResponse.json({ message: "Issue created" }, { status: 201 });
 }
