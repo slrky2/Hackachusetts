@@ -4,6 +4,8 @@
  * for geocoding, reverse-geocoding, and pin management.
  */
 
+import { APP_CONFIG } from "@/config/app";
+
 export interface LatLng {
   lat: number;
   lng: number;
@@ -26,6 +28,17 @@ export async function reverseGeocode(coords: LatLng): Promise<string | null> {
   // TODO: implement
   console.warn("reverseGeocode: not yet implemented", coords);
   return null;
+}
+
+/**
+ * Google Maps turn-by-turn directions to a place, starting from the user's
+ * current location. Opens the Google Maps app on phones, the website on
+ * desktop. Uses exact coordinates when known, otherwise searches the place
+ * name within the city.
+ */
+export function directionsUrl(coords: LatLng | null, place: string): string {
+  const destination = coords ? `${coords.lat},${coords.lng}` : `${place}, ${APP_CONFIG.defaultCity}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 }
 
 /**

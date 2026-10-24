@@ -10,6 +10,8 @@ export const SEVERITY_COLORS: Record<TicketSeverity, string> = {
   Low: "#059669",
 };
 export const POST_COLOR = "#0284c7";
+/** Bounty pins (chores and small jobs anyone can do). */
+export const BOUNTY_COLOR = "#7c3aed";
 
 /** Tailwind classes for the severity badge used in lists and cards. */
 export function severityBadgeClass(severity: TicketSeverity): string {

@@ -91,24 +91,81 @@ export interface Issue {
 
 // ─── Bounty ───────────────────────────────────────────────────────────────────
 
-export type BountyStatus = "open" | "claimed" | "in_review" | "completed" | "expired";
-export type BountyCategory = "issue_fix" | "community_task" | "cleanup" | "survey" | "other";
+/**
+ * A bounty is a small paid job anyone can do: a household chore or favor
+ * (mow a lawn, carry a couch), or light community work the city posts (park
+ * cleanup). Repairs that need city equipment, like potholes or streetlights,
+ * are not bounties; they stay city tickets for city crews.
+ *
+ * It moves through four states in one direction only:
+ *
+ *   open → claimed → done → paid
+ *
+ * Each step can be taken by exactly one person, checked by the server on
+ * every request against the signed-in Clerk user:
+ *   - claim   (open → claimed):  any signed-in user except the poster
+ *   - done    (claimed → done):  only the claimer
+ *   - approve (done → paid):     only the poster (city staff for city jobs)
+ */
+export type BountyStatus = "open" | "claimed" | "done" | "paid";
+
+/** A step the current viewer is allowed to take on a bounty right now. */
+export type BountyAction = "claim" | "done" | "approve";
 
 export interface Bounty {
-  id: string;
+  id: number;
+  /** The job, e.g. "Mow my front and back lawn". Required, non-blank. */
   title: string;
-  description: string;
-  category: BountyCategory;
+  /** Extra info: when, how long, what to bring. May be empty. */
+  details: string;
+  /** Dollars paid on approval. 0 < reward ≤ 1000, rounded to cents. */
+  reward: number;
+  /** Display name of the poster. User ids are never sent to the client. */
+  posterName: string;
+  /** Opaque public id for the poster's profile page (/profile/:id). */
+  posterProfileId: string;
+  /** Photo of the job, if the poster added one. */
+  imageUrl: string | null;
+  /** True for city jobs (paid by the city, approved by city staff). */
+  postedByCity: boolean;
+  /** Display name of whoever took the job. null while open. */
+  claimerName: string | null;
+  /** Where the job is. null means no map pin. */
+  lat: number | null;
+  lng: number | null;
+  /** Where the job is, like "Lawrence St". Required; used for directions. */
+  place: string;
   status: BountyStatus;
-  reward: number; // points or currency
-  rewardType: "points" | "gift_card" | "recognition";
-  deadline?: string;
-  createdBy: User;
-  claimedBy?: User;
-  linkedIssueId?: string;
-  requirements: string[];
+  /** ISO time it was posted. Drives "2h ago" on the card. */
   createdAt: string;
-  updatedAt: string;
+  /** The viewer's relationship to this job, for "My jobs" and the pill text. */
+  mine: "posted" | "claimed" | null;
+  /** The one step the viewer can take now, or null. The UI shows one button. */
+  viewerCan: BountyAction | null;
+}
+
+/** The signed-in user as the bounty API sees them. */
+export interface BountyViewer {
+  name: string;
+  isCityStaff: boolean;
+  /** Simulated wallet balance in dollars. */
+  wallet: number;
+}
+
+/** Public profile of someone who posts jobs, from GET /api/profiles/:id. */
+export interface PosterProfile {
+  id: string;
+  name: string;
+  isCity: boolean;
+  jobsPosted: number;
+  /** Jobs they claimed, finished and got paid for. */
+  jobsCompleted: number;
+}
+
+/** GET /api/bounties response. `viewer` is null when signed out. */
+export interface BountiesResponse {
+  bounties: Bounty[];
+  viewer: BountyViewer | null;
 }
 
 // ─── Chatbot ──────────────────────────────────────────────────────────────────
@@ -173,13 +230,15 @@ export interface Notification {
 
 export type TicketSeverity = "High" | "Medium" | "Low";
 
-/** A reported city problem shown in the "City Problems" panel and as a map pin. */
+/**
+ * A reported city problem shown in the "City Problems" panel and as a map pin.
+ * These are city crew jobs (roads, lighting, utilities), not bounties.
+ */
 export interface CityTicket {
   id: number;
   title: string;
   category: string;
   severity: TicketSeverity;
-  reward: string;
   location: string;
   lat: number;
   lng: number;
@@ -248,7 +307,8 @@ export interface CityReport extends CityTicket {
   comments: IssueComment[];
 }
 
-/** Normalized marker the map renders; built from reports and posts. */
+/** Normalized marker the map renders; built from reports, posts and bounties. */
 export type CityMarker =
   | { id: string; kind: "issue"; lat: number; lng: number; report: CityReport }
-  | { id: string; kind: "post"; lat: number; lng: number; post: CityPost };
+  | { id: string; kind: "post"; lat: number; lng: number; post: CityPost }
+  | { id: string; kind: "bounty"; lat: number; lng: number; bounty: Bounty };
