@@ -1,0 +1,243 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test": {
+      "status": "passed",
+      "failingExample": "0/12 assertions passed on unfixed code (exit 1). /chatbot: no <header>/City Land h1 (City Land only in <title>); contains \"CivicConnect\" Sidebar; shell is bg-zinc-50 dark:bg-zinc-950 (no emerald gradient); card is \"rounded-xl border border-zinc-200 ...\" not homepage card; blue classes bg-blue-600, hover:bg-blue-700, focus:ring-blue-500; no header Chat link. /: Home link href=\"/feed\". ChatInterface.tsx: no emerald classes; blue at lines 75 (bg-blue-600), 104 (focus:ring-blue-500), 109 (bg-blue-600, hover:bg-blue-700).",
+      "lastRunTimestamp": 1792868681080
+    },
+    "3.8 Verify preservation tests still pass": {
+      "status": "passed",
+      "lastRunTimestamp": 1792869417337
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548016
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868554761
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868697956
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548104
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868701570
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868964861
+      }
+    ],
+    "3.1 Create shared nav icons module": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548131
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868969342
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869064612
+      }
+    ],
+    "3.2 Create shared SiteHeader component": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548151
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869067628
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869130509
+      }
+    ],
+    "3.3 Use SiteHeader on the homepage": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548169
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869133752
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869190359
+      }
+    ],
+    "3.4 Move chatbot page out of the dashboard route group": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548191
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869193929
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869249614
+      }
+    ],
+    "3.5 Apply homepage shell and card to the chatbot page": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548211
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869253525
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869320984
+      }
+    ],
+    "3.6 Swap ChatInterface blue classes for emerald": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548228
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869325574
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869371337
+      }
+    ],
+    "3.7 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548249
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869375315
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869472559
+      }
+    ],
+    "3.8 Verify preservation tests still pass": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548269
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869376315
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869473600
+      }
+    ],
+    "4. Static checks and build": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548291
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869477084
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869550293
+      }
+    ],
+    "5. Clean up temporary files": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548308
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869553569
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869604842
+      }
+    ],
+    "6. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792868548327
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869608029
+      },
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869711873
+      }
+    ],
+    "3. Fix for chatbot page not matching homepage style": [
+      {
+        "executionId": "d08eadcd-5b15-45c1-98de-34fb61a15191",
+        "chatSessionId": "sess_e538f0ff-d27e-497f-a455-f0264873dd27",
+        "timestamp": 1792869473653
+      }
+    ]
+  }
+}
