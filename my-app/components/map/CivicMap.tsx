@@ -93,7 +93,8 @@ function MarkerWithInfo({
 }) {
   const [markerRef, markerEl] = useAdvancedMarkerRef();
   const color = marker.kind === "issue" ? SEVERITY_COLORS[marker.report.severity] : POST_COLOR;
-  const label = marker.kind === "issue" ? marker.report.title : `Post by ${marker.post.author}`;
+  const label =
+    marker.kind === "issue" ? marker.report.title : `Post by ${marker.post.author.name}`;
 
   return (
     <>
@@ -152,11 +153,13 @@ function MarkerDetails({ marker }: { marker: CityMarker }) {
   return (
     <div className="max-w-[220px] space-y-1 text-zinc-900">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-        Post · {post.location}
+        {post.author.type === "city" ? "City update" : "Post"} · {post.location}
       </p>
+      {post.title && <p className="text-sm font-semibold leading-snug">{post.title}</p>}
       <p className="text-sm">
-        <span className="font-semibold">{post.author}</span> {post.caption}
+        <span className="font-semibold">{post.author.name}</span> {post.caption}
       </p>
+      {post.when && <p className="text-xs font-medium text-violet-700">{post.when}</p>}
     </div>
   );
 }

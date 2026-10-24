@@ -185,14 +185,48 @@ export interface CityTicket {
   lng: number;
 }
 
-/** A community feed post with a location, shown in the feed and as a map pin. */
+export type PostKind =
+  | "announcement"
+  | "event"
+  | "alert"
+  | "community"
+  | "lost_found"
+  | "volunteer";
+
+export interface PostAuthor {
+  name: string;
+  /** City departments get an "Official" badge; residents post as themselves. */
+  type: "city" | "resident";
+  /** Department or neighborhood, shown under the name. */
+  subtitle: string;
+}
+
+export interface PostImage {
+  src: string;
+  alt: string;
+  /** Attribution required by the photo's license. */
+  credit: string;
+  license: string;
+  sourceUrl: string;
+}
+
+/** A community feed post, shown in the feed and (if it has coords) as a map pin. */
 export interface CityPost {
   id: number;
-  author: string;
-  location: string;
+  author: PostAuthor;
+  kind: PostKind;
+  title?: string;
   caption: string;
-  lat: number;
-  lng: number;
+  location: string;
+  /** Omitted for citywide posts, which get no map pin. */
+  coords?: { lat: number; lng: number };
+  postedAt: string;
+  image?: PostImage;
+  /** Event time label, e.g. "Sat · 9am – 12pm". Turns the reaction into "Going". */
+  when?: string;
+  /** "Thanks" count, or "Going" count for posts with `when`. */
+  reactions: number;
+  hasReacted: boolean;
 }
 
 /** A comment on a report, as returned to the client (no author ids exposed). */

@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { CityReport, CityTicket } from "@/types";
-import { SEED_ISSUES } from "./seed";
+import type { CityPost, CityReport, CityTicket } from "@/types";
+import { SEED_ISSUES, seedPosts } from "./seed";
 
 /**
- * Server-side in-memory store for reports, upvotes, and comments.
+ * Server-side in-memory store for reports, posts, upvotes, and comments.
  *
  * POC only: data resets when the server restarts and isn't shared across
  * serverless instances. Replace with real DB calls behind the same functions.
@@ -27,8 +27,19 @@ interface StoredIssue {
   comments: StoredComment[];
 }
 
+interface StoredPost {
+  post: Omit<CityPost, "reactions">; // hasReacted is recomputed per viewer
+  baseReactions: number; // seed reactions, not tied to a viewer
+  reactorIds: Set<string>;
+}
+
+// Bump when the Store shape changes so a running dev server rebuilds it.
+const STORE_VERSION = 2;
+
 interface Store {
+  version: number;
   issues: Map<number, StoredIssue>;
+  posts: Map<number, StoredPost>;
   displayNames: Map<string, string>;
 }
 
@@ -36,7 +47,9 @@ interface Store {
 const globalForStore = globalThis as typeof globalThis & { __cityLandStore?: Store };
 
 function getStore(): Store {
-  globalForStore.__cityLandStore ??= createStore();
+  if (globalForStore.__cityLandStore?.version !== STORE_VERSION) {
+    globalForStore.__cityLandStore = createStore();
+  }
   return globalForStore.__cityLandStore;
 }
 
@@ -51,7 +64,14 @@ function createStore(): Store {
       comments: seed.comments.map((c) => ({ ...c, authorId: null })),
     });
   }
-  return { issues, displayNames: new Map() };
+
+  // Post times are relative to server start so the feed always looks fresh.
+  const posts = new Map<number, StoredPost>();
+  for (const { reactions, ...post } of seedPosts(Date.now())) {
+    posts.set(post.id, { post, baseReactions: reactions, reactorIds: new Set() });
+  }
+
+  return { version: STORE_VERSION, issues, posts, displayNames: new Map() };
 }
 
 /** Stable anonymous display name per viewer, e.g. "neighbor_101". */
@@ -112,4 +132,30 @@ export function addComment(issueId: number, viewerId: string, text: string): Add
     createdAt: new Date().toISOString(),
   });
   return { ok: true, report: toReport(issue, viewerId) };
+}
+
+// ─── Posts ────────────────────────────────────────────────────────────────────
+
+function toPost(stored: StoredPost, viewerId: string | null): CityPost {
+  return {
+    ...stored.post,
+    reactions: stored.baseReactions + stored.reactorIds.size,
+    hasReacted: viewerId !== null && stored.reactorIds.has(viewerId),
+  };
+}
+
+/** All posts, newest first. */
+export function listPosts(viewerId: string | null): CityPost[] {
+  return [...getStore().posts.values()]
+    .map((stored) => toPost(stored, viewerId))
+    .sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+}
+
+/** Toggle the viewer's "Thanks" / "Going". Returns null if the post doesn't exist. */
+export function toggleReaction(postId: number, viewerId: string): CityPost | null {
+  const stored = getStore().posts.get(postId);
+  if (!stored) return null;
+  if (stored.reactorIds.has(viewerId)) stored.reactorIds.delete(viewerId);
+  else stored.reactorIds.add(viewerId);
+  return toPost(stored, viewerId);
 }
