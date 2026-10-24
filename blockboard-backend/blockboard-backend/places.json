@@ -1,0 +1,29 @@
+{
+  "note": "Sample data for the demo. Replace with real local businesses and city info.",
+  "town": "Riverside",
+  "faqs": [
+    {"q": "trash pickup", "a": "Trash and recycling go out Monday nights for Tuesday pickup in Ward 4. Yard waste is every other Wednesday."},
+    {"q": "bulk pickup", "a": "Couches, mattresses and appliances: book a free bulk pickup through the city (up to 4 a year). Leaving them on the curb without booking can get a fine."},
+    {"q": "street sweeping", "a": "Street sweeping is Tuesday 8 to 11 AM on Elm and Oak. Move your car or get a $45 ticket."},
+    {"q": "city hall", "a": "City Hall is open Monday to Friday, 8 AM to 5 PM. Permits, parking passes and water bills are handled at the first-floor service desk."},
+    {"q": "permit", "a": "Block-party and yard-sale permits are free and take about 3 business days. Construction permits go through the Building Department at City Hall."},
+    {"q": "library", "a": "Riverside Library is open 9 AM to 8 PM weekdays and 10 AM to 5 PM weekends. Free Wi-Fi, printing at 10 cents a page."},
+    {"q": "community meeting", "a": "The Ward 4 community meeting is Thursday at 6:30 PM at Riverside Library. This week's topic is the Main St bike lane."},
+    {"q": "parking", "a": "Downtown street parking is free after 6 PM and on Sundays. Residential permit zones need a sticker from City Hall."}
+  ],
+  "places": [
+    {"id": "p1", "name": "Green Fork Kitchen", "type": "restaurant", "cuisine": "Plant-based bowls and wraps", "diet": ["vegan", "vegetarian", "dairy-free", "gluten-free options"], "allergens": "Uses cashews and sesame in several sauces. Ask for the allergen sheet.", "price": "$$", "hours": "11 AM to 9 PM", "address": "214 Main St", "dx": 220, "dy": 140},
+    {"id": "p2", "name": "Tony's Pizza", "type": "restaurant", "cuisine": "New York style pizza", "diet": ["vegetarian", "gluten-free crust"], "allergens": "Gluten-free crust is baked in the same oven, so there is cross-contact risk for celiac.", "price": "$", "hours": "11 AM to 11 PM", "address": "88 Elm St", "dx": -310, "dy": 260},
+    {"id": "p3", "name": "Sakura Sushi", "type": "restaurant", "cuisine": "Japanese", "diet": ["gluten-free options", "dairy-free", "pescatarian"], "allergens": "Shellfish and sesame are used throughout. Tamari available instead of soy sauce.", "price": "$$$", "hours": "5 PM to 10 PM, closed Mondays", "address": "17 River St", "dx": 450, "dy": -220},
+    {"id": "p4", "name": "Al-Noor Grill", "type": "restaurant", "cuisine": "Middle Eastern", "diet": ["halal", "vegetarian options", "dairy-free options"], "allergens": "Tahini (sesame) in most dishes. Nut-free kitchen.", "price": "$$", "hours": "10 AM to 10 PM", "address": "302 Oak St", "dx": -120, "dy": -330},
+    {"id": "p5", "name": "Sunrise Bakery", "type": "bakery", "cuisine": "Breads, cakes, custom birthday cakes", "diet": ["vegetarian", "nut-free"], "allergens": "Certified nut-free facility. Contains wheat, eggs and dairy.", "price": "$", "hours": "6 AM to 3 PM", "address": "45 Maple St", "dx": 60, "dy": 420},
+    {"id": "p6", "name": "Bean There Cafe", "type": "cafe", "cuisine": "Coffee, pastries, sandwiches", "diet": ["vegetarian", "vegan options", "oat and almond milk"], "allergens": "Almond milk and nut pastries on site. Gluten-free muffins are pre-packaged.", "price": "$", "hours": "7 AM to 6 PM", "address": "120 Main St", "dx": 120, "dy": 60},
+    {"id": "p7", "name": "Shalom Deli", "type": "restaurant", "cuisine": "Jewish deli", "diet": ["kosher"], "allergens": "Contains wheat, eggs and sesame (bagels).", "price": "$$", "hours": "8 AM to 4 PM, closed Saturdays", "address": "9 Elm St", "dx": -420, "dy": 90},
+    {"id": "p8", "name": "Taqueria La Esquina", "type": "restaurant", "cuisine": "Mexican", "diet": ["gluten-free options", "vegetarian options"], "allergens": "Corn tortillas are gluten-free. Beans are cooked with lard, so not vegetarian unless you ask for black beans.", "price": "$", "hours": "9 AM to 10 PM", "address": "260 River St", "dx": 360, "dy": -60},
+    {"id": "p9", "name": "Riverside Fresh Market", "type": "grocery", "cuisine": "Grocery with allergy-friendly aisle", "diet": ["vegan", "gluten-free", "halal", "kosher", "nut-free"], "allergens": "Dedicated allergy-friendly aisle and labeled bulk bins.", "price": "$$", "hours": "7 AM to 10 PM", "address": "500 Main St", "dx": 520, "dy": 230},
+    {"id": "p10", "name": "CareWell Pharmacy", "type": "pharmacy", "cuisine": "Pharmacy, flu shots, EpiPen refills", "diet": [], "allergens": "", "price": "", "hours": "8 AM to 9 PM", "address": "77 Oak St", "dx": -200, "dy": -120},
+    {"id": "p11", "name": "Riverside Library", "type": "library", "cuisine": "Library, free Wi-Fi, printing, meeting rooms", "diet": [], "allergens": "", "price": "Free", "hours": "9 AM to 8 PM weekdays", "address": "1 Library Way", "dx": -60, "dy": 30},
+    {"id": "p12", "name": "River Park", "type": "park", "cuisine": "Park, playground, Saturday farmers market", "diet": [], "allergens": "", "price": "Free", "hours": "6 AM to 10 PM", "address": "River St & 6th Ave", "dx": 650, "dy": -380},
+    {"id": "p13", "name": "City Hall", "type": "city service", "cuisine": "Permits, parking passes, water bills", "diet": [], "allergens": "", "price": "", "hours": "8 AM to 5 PM weekdays", "address": "100 Civic Center Dr", "dx": 0, "dy": -60}
+  ]
+}

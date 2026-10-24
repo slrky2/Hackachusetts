@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BlockBoard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+<script src="/static/leaflet/leaflet.js"></script>
+<script src="/static/scenes.js"></script>
+<style>
+/* Layout: a phone running the resident app beside the city's desk. Both read and write the same Python backend. */
+:root{
+  --bg:#eef1ec; --panel:#ffffff; --sunk:#f5f6f3; --line:#dde1d9; --fg:#18201c; --muted:#66726b;
+  --accent:#1d6b52; --accentfg:#ffffff; --sign:#f2c230; --signfg:#2a2200; --soft:#e3efe9;
+  --ok:#1f8a5b; --warn:#b97100; --crit:#c2392f; --info:#2d62b8; --food:#7a4fb0;
+  --okbg:rgba(31,138,91,.12); --warnbg:rgba(185,113,0,.13); --critbg:rgba(194,57,47,.12); --infobg:rgba(45,98,184,.12); --foodbg:rgba(122,79,176,.12);
+  --frame:#1a1f1c;
+  --sans:"Public Sans",system-ui,-apple-system,sans-serif; --mono:"DM Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f1411; --panel:#161d19; --sunk:#121814; --line:#28322c; --fg:#e3ebe6; --muted:#93a39a;
+  --accent:#4fbf96; --accentfg:#06140e; --soft:#1d3329;
+  --ok:#47c98f; --warn:#f0a531; --crit:#ff6f63; --info:#78a6ff; --food:#b58cf0;
+  --okbg:rgba(71,201,143,.14); --warnbg:rgba(240,165,49,.15); --critbg:rgba(255,111,99,.15); --infobg:rgba(120,166,255,.15); --foodbg:rgba(181,140,240,.15);
+  --frame:#000; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.4}
+.wrap{max-width:1240px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right)) 36px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
+h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px;max-width:72ch}
+.label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+button{cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accentfg);font-weight:700}
+button[disabled]{opacity:.45;cursor:not-allowed}
+input[type=text],input[type=number],textarea{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--panel);font-size:15px;width:100%;min-width:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage{display:grid;grid-template-columns:400px minmax(0,1fr);gap:20px;align-items:start}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.p-High{color:var(--crit);background:var(--critbg)}.p-Medium{color:var(--warn);background:var(--warnbg)}.p-Low{color:var(--info);background:var(--infobg)}.st-Fixed,.b-paid{color:var(--ok);background:var(--okbg)}
+.b-open{color:var(--accent);background:var(--soft)}.b-claimed{color:var(--info);background:var(--infobg)}.b-done{color:var(--warn);background:var(--warnbg)}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--foodbg);color:var(--food);font-weight:600;margin:2px 3px 0 0}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 14px;scrollbar-width:none;flex:none}
+.chips button{border-radius:999px;font-size:13px;padding:4px 11px;white-space:nowrap;flex:none}
+.chips button[aria-pressed="true"]{background:var(--fg);color:var(--panel);border-color:var(--fg)}
+
+/* ---- phone ---- */
+.phone{background:var(--frame);border-radius:44px;padding:12px;box-shadow:0 20px 50px rgba(0,0,0,.18);max-width:100%}
+.screen{background:var(--panel);border-radius:34px;height:800px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.appbar{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 8px;flex:none}
+.logo{font-weight:800;font-size:22px;letter-spacing:-.02em}
+.logo span{background:var(--sign);color:var(--signfg);padding:0 5px;border-radius:4px;margin-left:2px}
+.bell{border:0;background:none;font-size:22px;position:relative;padding:2px 6px}
+.dot{position:absolute;top:0;right:0;background:var(--crit);color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:0 5px;line-height:16px}
+.view{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;display:flex;flex-direction:column}
+.view.fill{overflow:hidden}
+.stories{display:flex;gap:12px;overflow-x:auto;padding:4px 14px 12px;border-bottom:1px solid var(--line);scrollbar-width:none;flex:none}
+.story{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;width:66px;flex:none;font-size:11px}
+.ring{width:62px;height:62px;border-radius:50%;padding:3px;background:conic-gradient(var(--sign),var(--accent),var(--sign))}
+.ring.seen{background:var(--line)}
+.ring div{width:100%;height:100%;border-radius:50%;border:3px solid var(--panel);display:grid;place-items:center;font-size:24px;background:var(--sunk)}
+.story span{max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.post{border-bottom:1px solid var(--line);padding-bottom:10px;flex:none}
+.flash{animation:fl 1.6s ease}
+@keyframes fl{from{background:var(--soft)}to{background:transparent}}
+.ph{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex:none}
+.ph b{font-size:14px;display:block}
+.ph small{color:var(--muted);font-size:12px}
+.ph .maplink{margin-left:auto;border:0;background:none;font-size:13px;color:var(--accent);font-weight:600;padding:2px}
+.media{position:relative;aspect-ratio:1/1;max-width:100%;background:var(--sunk);overflow:hidden}
+.slides{display:flex;height:100%;transition:transform .35s ease}
+.slides img{width:100%;height:100%;object-fit:cover;flex:none}
+.badge{position:absolute;top:10px;left:10px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.62);color:#fff}
+.badge.fixed{background:#1f8a5b}
+.slabel{position:absolute;top:10px;right:10px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.9);color:#18201c}
+.nav-btn{position:absolute;top:50%;transform:translateY(-50%);border-radius:50%;width:30px;height:30px;padding:0;background:rgba(255,255,255,.85);color:#18201c;border:0;font-weight:700}
+.nav-btn.l{left:8px}.nav-btn.r{right:8px}
+.actions{display:flex;align-items:center;gap:6px;padding:8px 10px 2px}
+.actions button{border:0;background:none;padding:4px 6px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:5px}
+.metoo[aria-pressed="true"]{color:var(--accent)}
+.metoo .ic{font-size:20px}
+.bountychip{margin-left:auto;background:var(--soft)!important;color:var(--accent);border-radius:999px!important;font-size:13px!important}
+.count{padding:0 14px;font-weight:700;font-size:14px}
+.cap{padding:3px 14px;font-size:14px;overflow-wrap:anywhere}
+.ai{margin:6px 14px 2px;font-size:12.5px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.cmts{padding:2px 14px;font-size:14px;display:flex;flex-direction:column;gap:3px}
+.cmts .city b::after{content:" ✓";color:var(--info)}
+.addc{display:flex;gap:6px;padding:6px 14px 0}
+.addc input{flex:1;min-width:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:5px 0;font-size:14px}
+.addc button{border:0;background:none;color:var(--accent);font-weight:700;padding:4px}
+.tabbar{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);padding:6px 6px 14px;background:var(--panel);flex:none}
+.tabbar button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;color:var(--muted);padding:4px;position:relative}
+.tabbar .ic{font-size:21px;line-height:1}
+.tabbar button[aria-current="true"]{color:var(--fg);font-weight:700}
+.tabbar .plus .ic{background:var(--accent);color:var(--accentfg);width:38px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:20px;font-weight:700}
+/* map */
+.mapbox{flex:1;min-height:0;position:relative}
+.mapbox>.m{position:absolute;inset:0}
+.mapcard{position:absolute;left:10px;right:10px;bottom:10px;z-index:500;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.18);display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:4px 10px;align-items:start}
+.mapcard img{width:56px;height:56px;border-radius:8px;object-fit:cover;grid-row:span 3}
+.mapcard .em{width:56px;height:56px;border-radius:8px;display:grid;place-items:center;font-size:28px;background:var(--sunk);grid-row:span 3}
+.mapcard b{font-size:15px}
+.mapcard small{color:var(--muted);font-size:12.5px;display:block}
+.mapcard .x{border:0;background:none;font-size:18px;padding:0 4px;color:var(--muted)}
+.legend{position:absolute;top:8px;left:8px;z-index:500;background:var(--panel);border-radius:8px;padding:4px 8px;font-size:12px;color:var(--muted);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+/* sheets */
+.sheet{position:absolute;inset:0;background:var(--panel);z-index:1000;display:flex;flex-direction:column}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--line);gap:8px}
+.sheet-h b{font-size:16px}
+.sheet-b{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.pick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pick button,.pick label{padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--sunk);position:relative;cursor:pointer}
+.pick img{width:100%;height:100%;object-fit:cover;display:block}
+.pick [aria-pressed="true"]{border-color:var(--accent)}
+.pick .up{display:grid;place-items:center;font-size:11px;color:var(--muted);text-align:center;border:2px dashed var(--line)}
+.pick .up input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.minimap{height:190px;border-radius:12px;overflow:hidden;border:1px solid var(--line);position:relative;flex:none}
+.minimap .m{position:absolute;inset:0}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.check{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--sunk);font-size:14px;display:grid;gap:5px}
+.check .r{display:flex;gap:8px}.check .k{color:var(--muted);min-width:76px}.bad{color:var(--warn)}
+.modal{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:1100;display:grid;place-items:center;padding:20px}
+.modal>div{background:var(--panel);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;max-width:320px}
+.modal h3{margin:0;font-size:17px}.modal p{margin:0;color:var(--muted);font-size:14px}
+.modal img{width:100%;border-radius:10px;aspect-ratio:1.6;object-fit:cover}
+.storyv{position:absolute;inset:0;z-index:1200;color:#fff;display:flex;flex-direction:column;padding:14px 16px 24px}
+.bars{display:flex;gap:4px}.bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden}
+.bars i b{display:block;height:100%;background:#fff;width:0;animation:bar 4.5s linear forwards}
+@keyframes bar{to{width:100%}}
+.sv-h{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-weight:700;font-size:14px}
+.sv-h button{background:none;border:0;color:#fff;font-size:22px}
+.sv-b{flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.sv-b .big{font-size:56px}.sv-b h3{margin:0;font-size:28px;font-weight:800;line-height:1.15}.sv-b p{margin:0;font-size:17px;opacity:.92}
+.toast{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);background:var(--fg);color:var(--panel);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;z-index:1300;max-width:90%;text-align:center}
+.list .it{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.list .it small{color:var(--muted);display:block}
+.list .it img{width:44px;height:44px;border-radius:6px;object-fit:cover}
+.list .it.new{background:var(--soft)}
+/* bounties */
+.wallet{margin:6px 14px 4px;padding:12px 14px;border-radius:14px;background:var(--accent);color:var(--accentfg);display:flex;justify-content:space-between;align-items:center}
+.wallet b{font-size:26px;display:block}
+.wallet button{background:var(--accentfg);color:var(--accent);border:0;font-weight:700}
+.bcard{margin:6px 14px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:none}
+.bcard .top{display:flex;gap:10px;align-items:flex-start}
+.bcard h3{margin:0;font-size:15px;flex:1}
+.bcard .rw{font-size:20px;font-weight:800;color:var(--accent)}
+.bcard p{margin:0;font-size:14px;color:var(--muted)}
+.bcard .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.bcard .acts{display:flex;gap:8px}
+.verified{color:var(--info);font-weight:700}
+/* chat */
+.msgs{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.msg{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px}
+.msg .av{width:30px;height:30px;font-size:12px}
+.msg .who{font-weight:700;font-size:13px}.msg .who time{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+.msg .body{font-size:14px;overflow-wrap:anywhere;white-space:pre-wrap}
+.me .bubble{background:var(--soft)}
+.bubble{background:var(--sunk);border-radius:12px;padding:8px 10px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pcard{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;background:var(--panel);font-size:13.5px;display:grid;gap:3px}
+.pcard b{font-size:14px}
+.pcard .warn{color:var(--warn)}
+.pcard button{justify-self:start;font-size:12.5px;padding:3px 9px;border-radius:999px}
+.composer{border-top:1px solid var(--line);padding:8px 12px;display:flex;gap:8px;flex:none}
+.composer input{border-radius:999px}
+.typing{color:var(--muted);font-size:13px;font-style:italic}
+.diet{padding:0 14px 6px;flex:none}
+.diet .chips{padding:4px 0}
+.diet .chips button[aria-pressed="true"]{background:var(--food);border-color:var(--food);color:#fff}
+.sugg{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.sugg button{border-radius:999px;font-size:13px;background:var(--sunk)}
+
+/* ---- city desk ---- */
+.desk{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-width:0;display:flex;flex-direction:column}
+.desk-h{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.desk-h h2{margin:0;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.stats>div{padding:10px 16px;min-width:0}.stats>div+div{border-left:1px solid var(--line)}
+.stats b{display:block;font-size:24px;font-weight:800}
+#deskmap{height:280px;border-bottom:1px solid var(--line);position:relative}
+#deskmap .m{position:absolute;inset:0}
+.dsec{padding:12px 14px 4px;display:flex;justify-content:space-between;align-items:center}
+.tickets{list-style:none;margin:0;padding:4px 12px 10px;display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+.tk{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.tk.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--soft)}
+.tk img{width:56px;height:56px;border-radius:6px;object-fit:cover;grid-row:span 3}
+.tk h3{margin:0;font-size:15px}
+.tk .meta{color:var(--muted);font-size:13px;display:flex;gap:10px;flex-wrap:wrap;grid-column:2/-1}
+.tk select{font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.tk .bform{grid-column:2/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tk .bform input{width:90px}
+.tk .bbtn{font-size:12.5px;padding:3px 9px}
+.cnews{display:flex;gap:8px;padding:6px 14px 14px}
+.foot{color:var(--muted);font-size:13px;max-width:100ch;margin:0}
+.leaflet-container{background:var(--sunk);font:inherit}
+@media (max-width:920px){.stage{grid-template-columns:minmax(0,1fr)}.phone{margin:0 auto;width:100%;max-width:400px}}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stats>div:nth-child(3){border-left:0}.stats>div:nth-child(n+3){border-top:1px solid var(--line)}.phone{padding:8px;border-radius:36px}.screen{border-radius:28px;height:740px}.tk{grid-template-columns:48px minmax(0,1fr)}.tk img{width:48px;height:48px}.tk select{grid-column:2}}
+@media (prefers-reduced-motion:reduce){.slides,.flash{transition:none;animation:none}.bars i b{animation-duration:.01s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="label">Civic Action track · prototype</div>
+      <h1>BlockBoard <span id="town" style="color:var(--muted);font-weight:600"></span></h1>
+      <div class="sub">Neighbors report problems with a photo and a pin, see road closures and hazards on a live map, chat in channels, ask BlockBot where to eat, and pick up paid bounties. The city works from the desk on the right.</div>
+    </div>
+    <button id="reset">Reset demo</button>
+  </header>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="screen" id="screen">
+        <div class="appbar"><div class="logo">Block<span>Board</span></div><button class="bell" id="bell" aria-label="Updates">🔔<span class="dot" id="bellDot" hidden></span></button></div>
+        <div class="view" id="view"></div>
+        <nav class="tabbar" id="tabbar" aria-label="App tabs"></nav>
+      </div>
+    </div>
+
+    <section class="desk" aria-label="City desk">
+      <div class="desk-h"><h2>City desk · 311 <span class="label" id="mode" style="margin-left:6px"></span></h2><button id="neighbor">Simulate neighbor activity</button></div>
+      <div class="stats">
+        <div><span class="label">Open reports</span><b class="mono" id="sOpen">0</b></div>
+        <div><span class="label">Roads blocked</span><b class="mono" id="sClosed">0</b></div>
+        <div><span class="label">Hazards</span><b class="mono" id="sHaz">0</b></div>
+        <div><span class="label">Open bounties</span><b class="mono" id="sBounty">0</b></div>
+      </div>
+      <div id="deskmap"><div class="m" id="deskmapEl"></div></div>
+      <div class="dsec"><span class="label">Tickets</span><span class="sub" style="font-size:13px">Change a status or post a bounty for a job</span></div>
+      <ol class="tickets" id="tickets"></ol>
+      <div class="dsec"><span class="label">City bounties</span></div>
+      <ol class="tickets" id="cityBounties"></ol>
+      <div class="dsec"><span class="label">Post to #city-news</span></div>
+      <form class="cnews" id="cnews"><input type="text" id="cnewsText" placeholder="e.g. Oak St closed for paving 9 AM to 3 PM tomorrow" autocomplete="off"><button class="primary">Post</button></form>
+    </section>
+  </div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+(function(){
+// ================= helpers =================
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function API(path,body){
+  const r=await fetch('/api'+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(typeof j.detail==='string'?j.detail:('Server error '+r.status));
+  return j;
+}
+const agoStr=ts=>{const s=Math.max(0,Date.now()/1000-ts);return s<60?'now':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
+const money=n=>'$'+(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2});
+
+const PEOPLE={you:{n:'you',c:'#1d6b52'},maria:{n:'maria.g',c:'#9a4fb0'},dev:{n:'dev_p',c:'#2d62b8'},june:{n:'junek',c:'#c0592b'},sam:{n:'sam.o',c:'#4f7a28'},city:{n:'CityOfRiverside',c:'#2d62b8'},bot:{n:'BlockBot',c:'#f2c230'}};
+const person=w=>PEOPLE[w]||{n:w,c:'#777'};
+const av=w=>`<div class="av" style="background:${person(w).c}">${w==='city'?'🏙':w==='bot'?'🤖':esc(person(w).n[0].toUpperCase())}</div>`;
+const STATUSES=['Received','Crew assigned','In progress','Fixed'];
+const BADGE={'Received':'📨 Sent to city','Crew assigned':'🚧 Crew assigned','In progress':'🛠️ Being fixed','Fixed':'✅ Fixed'};
+const LAYER={closure:{c:'#c2392f',e:'🚧',n:'Road blocked'},hazard:{c:'#d97706',e:'⚠️',n:'Hazard'},action:{c:'#2d62b8',e:'🛠️',n:'Needs city action'}};
+const PTYPE={restaurant:'🍽️',cafe:'☕',bakery:'🥐',grocery:'🛒',pharmacy:'💊',park:'🌳',library:'📚','city service':'🏛️'};
+const DIETS=['vegan','vegetarian','gluten-free','dairy-free','nut-free','halal','kosher'];
+// sample photos for the report form: [scene, caption, meters east, meters north]
+const SAMPLES=[['pothole','Huge pothole on Maple St, almost lost a tire',40,380],['blockage','Road blocked on River St, truck broke down across both lanes',400,-160],['hazard','Broken glass all over the bike lane on Main St',300,90],['flood','Storm drain clogged on Oak St, water pooling',-150,-300],['light','Streetlight out on Elm St, super dark walking home',-300,200],['trash','Someone dumped a couch on River St',600,-200],['graffiti','Fresh graffiti on the wall at Main and 1st',80,120]];
+
+let CFG=null;
+let S={tab:'home',filter:'all',chan:'bot',mapFilter:new Set(['closure','hazard','action','bounty']),bfilter:'open',
+  posts:[],bounties:[],notifs:[],chat:{},wallet:0,dups:0,ver:-1,mode:'rules',
+  seenStories:new Set(),bot:[],botBusy:false,diets:new Set(),sel:null,deskSel:null,toast:null};
+const count=p=>p.metoo.size+p.extra;
+function offset(dx,dy){const lat=CFG.center[0]+dy/111111;return[lat,CFG.center[1]+dx/(111111*Math.cos(lat*Math.PI/180))]}
+
+// ================= maps (Google Maps if a key is set, otherwise Leaflet + OpenStreetMap) =================
+function pinIcon(color,emoji,size){size=size||34;const h=Math.round(size*1.25);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${h}" viewBox="0 0 34 42"><path d="M17 41C17 41 3 26 3 16a14 14 0 0 1 28 0c0 10-14 25-14 25z" fill="${color}" stroke="#fff" stroke-width="2.5"/><circle cx="17" cy="16" r="10" fill="#fff"/><text x="17" y="21" font-size="13" text-anchor="middle">${emoji}</text></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)}
+const MapKit={
+  google:false,
+  async load(){
+    if(!CFG.google_maps_key)return;
+    await new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(CFG.google_maps_key);s.onload=ok;s.onerror=fail;document.head.appendChild(s)}).then(()=>{this.google=true}).catch(()=>console.warn('Google Maps failed to load, using OpenStreetMap'));
+  },
+  create(el,center,zoom){
+    if(this.google){const m=new google.maps.Map(el,{center:{lat:center[0],lng:center[1]},zoom,disableDefaultUI:true,zoomControl:true,gestureHandling:'greedy',clickableIcons:false});return{m,g:1,markers:[]}}
+    const m=L.map(el,{zoomControl:true}).setView(center,zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m);
+    return{m,g:0,markers:[]};
+  },
+  pin(map,lat,lng,color,emoji,title,onClick,size){
+    const url=pinIcon(color,emoji,size),s=size||34,h=Math.round(s*1.25);let mk;
+    if(map.g){mk=new google.maps.Marker({map:map.m,position:{lat,lng},title,icon:{url,scaledSize:new google.maps.Size(s,h),anchor:new google.maps.Point(s/2,h)}});if(onClick)mk.addListener('click',onClick)}
+    else{mk=L.marker([lat,lng],{title,icon:L.icon({iconUrl:url,iconSize:[s,h],iconAnchor:[s/2,h]})}).addTo(map.m);if(onClick)mk.on('click',onClick)}
+    map.markers.push(mk);return mk;
+  },
+  move(map,mk,lat,lng){map.g?mk.setPosition({lat,lng}):mk.setLatLng([lat,lng])},
+  clear(map){map.markers.forEach(mk=>map.g?mk.setMap(null):mk.remove());map.markers=[]},
+  onClick(map,cb){map.g?map.m.addListener('click',e=>cb(e.latLng.lat(),e.latLng.lng())):map.m.on('click',e=>cb(e.latlng.lat,e.latlng.lng))},
+  center(map,lat,lng,zoom){map.g?(map.m.panTo({lat,lng}),zoom&&map.m.setZoom(zoom)):map.m.setView([lat,lng],zoom||map.m.getZoom())},
+  resize(map){if(!map.g)setTimeout(()=>map.m.invalidateSize(),0)}
+};
+
+// ================= data =================
+function hydrate(p){
+  const old=S.posts.find(o=>o.id===p.id);
+  p.metoo=new Set(p.metoo);
+  p.img=p.image_url||scene(p.cat_id,false,p.id);p.after=p.status==='Fixed'?scene(p.cat_id,true,p.id):null;
+  p.slide=old&&old.status===p.status?Math.min(old.slide,p.after?1:0):(p.after?1:0);
+  const changed=old&&(old.status!==p.status||count(old)!==p.metoo.size+p.extra||old.comments.length!==p.comments.length);
+  p.flash=changed||(!old&&S.ver>=0)?Date.now():(old?old.flash:0);
+  p.ago=agoStr(p.created_at);return p;
+}
+const focusIn=sel=>{const a=document.activeElement;return a&&a.closest&&a.closest(sel)};
+async function refresh(force){
+  try{
+    const d=await API('/state');
+    if(!force&&d.version===S.ver)return;
+    S.posts=d.posts.map(hydrate);S.bounties=d.bounties;S.chat=d.chat;S.wallet=d.wallet;S.dups=d.dups;S.ver=d.version;S.mode=d.triage_mode;
+    S.notifs=d.notifs.map(n=>{const p=S.posts.find(x=>x.id===n.post);return Object.assign(n,{ago:agoStr(n.at),img:p?(p.after||p.img):null})});
+    S.offline=false;render();
+  }catch(e){if(!S.offline){S.offline=true;toast('Can\'t reach the server. Is uvicorn running?')}}
+}
+function act(promise,msg){return promise.then(r=>{if(msg)toast(typeof msg==='function'?msg(r):msg);return refresh(true).then(()=>r)}).catch(e=>{toast(e.message)})}
+function toast(t){S.toast=t;const old=$('screen').querySelector('.toast');if(old)old.remove();if(!t)return;const el=document.createElement('div');el.className='toast';el.textContent=t;$('screen').appendChild(el);setTimeout(()=>{if(S.toast===t){S.toast=null;el.remove()}},2800)}
+
+// ================= render =================
+function render(){renderTabbar();renderView();renderDesk()}
+function renderTabbar(){
+  $('tabbar').innerHTML=[['home','🏠','Home'],['map','🗺️','Map'],['new','+','Report'],['bounties','💰','Bounties'],['chat','💬','Chat']].map(([k,ic,l])=>`<button type="button" data-tab="${k}" class="${k==='new'?'plus':''}" aria-current="${S.tab===k}"><span class="ic">${ic}</span>${l}</button>`).join('');
+  $('tabbar').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.tab;if(k==='new')openCompose();else go(k)});
+  const unread=S.notifs.filter(n=>n.isNew).length;$('bellDot').hidden=!unread;$('bellDot').textContent=unread;
+}
+function go(tab,opts){S.tab=tab;Object.assign(S,opts||{});S.viewKey=null;render();$('view').scrollTop=0}
+let viewMap=null;
+function renderView(){
+  const v=$('view');const key=S.tab+(S.tab==='chat'?':'+S.chan:'');
+  if(S.viewKey!==key){S.viewKey=key;v.className='view'+(S.tab==='map'||S.tab==='chat'?' fill':'');v.innerHTML='';viewMap=null;build[S.tab](v)}
+  update[S.tab](v);
+}
+const build={
+  home(v){v.innerHTML='<div id="feed"></div>'},
+  map(v){
+    v.innerHTML=`<div class="chips" id="mapChips"></div><div class="mapbox"><div class="m" id="bigmap"></div><div id="mapcard"></div></div>`;
+    viewMap=MapKit.create($('bigmap'),S.mapFocus||CFG.center,S.mapFocus?17:15);S.mapFocus=null;MapKit.resize(viewMap);
+  },
+  bounties(v){v.innerHTML='<div id="blist"></div>'},
+  chat(v){
+    const chans=[['bot','🤖 BlockBot']].concat(CFG.channels.map(c=>[c,'#'+c]));
+    v.innerHTML=`<div class="chips" id="chanChips">${chans.map(([k,l])=>`<button type="button" data-chan="${k}" aria-pressed="${S.chan===k}">${l}</button>`).join('')}</div>
+      ${S.chan==='bot'?`<div class="diet"><div class="label">My dietary needs</div><div class="chips" id="dietChips"></div></div>`:''}
+      <div class="msgs" id="msgs"></div>
+      <form class="composer" id="composer"><input type="text" id="chatIn" autocomplete="off" placeholder="${S.chan==='bot'?'Ask about food, places or city services…':S.chan==='city-news'?'Only the city posts here':'Message #'+S.chan}" ${S.chan==='city-news'?'disabled':''}><button class="primary" ${S.chan==='city-news'?'disabled':''}>Send</button></form>`;
+    v.querySelectorAll('[data-chan]').forEach(b=>b.onclick=()=>{S.chan=b.dataset.chan;renderView()});
+    $('composer').onsubmit=e=>{e.preventDefault();const t=$('chatIn').value.trim();if(!t)return;$('chatIn').value='';
+      if(S.chan==='bot')askBot(t);else act(API('/channels/'+S.chan+'/messages',{user:'you',text:t}))};
+  }
+};
+const update={
+  home(){
+    if(focusIn('.addc'))return;
+    const st=STORIES().map(s=>`<button type="button" class="story" data-story="${s.id}"><div class="ring ${s.id==='new'||S.seenStories.has(s.id)?'seen':''}"><div>${s.ic}</div></div><span>${s.n}</span></button>`).join('');
+    const list=S.posts.filter(p=>S.filter==='all'||(S.filter==='open'?p.status!=='Fixed':S.filter==='fixed'?p.status==='Fixed':p.layer!=='action'&&p.status!=='Fixed'));
+    $('feed').innerHTML=`<div class="stories">${st}</div>
+      <div class="chips">${[['all','All'],['open','Open'],['road','🚧 Roads & hazards'],['fixed','Fixed']].map(([k,l])=>`<button type="button" data-filter="${k}" aria-pressed="${S.filter===k}">${l}</button>`).join('')}</div>
+      ${list.map(postHTML).join('')||'<p class="sub" style="padding:14px">Nothing here yet.</p>'}`;
+    bindFeed($('feed'));
+  },
+  map(v){
+    const F=S.mapFilter;
+    $('mapChips').innerHTML=[['closure','🚧 Closures'],['hazard','⚠️ Hazards'],['action','🛠️ City action'],['bounty','💰 Bounties'],['places','🍽️ Food & places']].map(([k,l])=>`<button type="button" data-mf="${k}" aria-pressed="${F.has(k)}">${l}</button>`).join('');
+    $('mapChips').querySelectorAll('[data-mf]').forEach(b=>b.onclick=()=>{F.has(b.dataset.mf)?F.delete(b.dataset.mf):F.add(b.dataset.mf);update.map()});
+    MapKit.clear(viewMap);
+    if(F.has('places'))CFG.places.forEach(p=>MapKit.pin(viewMap,p.lat,p.lng,'#7a4fb0',PTYPE[p.type]||'📍',p.name,()=>{S.sel={k:'place',id:p.id};mapCard()},28));
+    S.bounties.filter(b=>b.lat!=null&&b.status!=='paid'&&F.has('bounty')).forEach(b=>MapKit.pin(viewMap,b.lat,b.lng,'#1d6b52','💰',b.title,()=>{S.sel={k:'bounty',id:b.id};mapCard()},30));
+    S.posts.filter(p=>p.status!=='Fixed'&&F.has(p.layer)).forEach(p=>{const L_=LAYER[p.layer];MapKit.pin(viewMap,p.lat,p.lng,L_.c,L_.e,p.cat_name,()=>{S.sel={k:'post',id:p.id};mapCard()},p.layer==='action'?32:38)});
+    mapCard();
+  },
+  bounties(){
+    const mine=b=>b.poster==='you'||b.claimer==='you';
+    const list=S.bounties.filter(b=>S.bfilter==='open'?b.status==='open':S.bfilter==='mine'?mine(b):b.status==='paid');
+    $('blist').innerHTML=`<div class="wallet"><div><span style="font-size:12px;opacity:.85">Your wallet</span><b class="mono">${money(S.wallet)}</b></div><button type="button" id="newBounty">+ Post a job</button></div>
+      <div class="chips">${[['open','Open jobs'],['mine','My jobs'],['paid','Paid out']].map(([k,l])=>`<button type="button" data-bf="${k}" aria-pressed="${S.bfilter===k}">${l}</button>`).join('')}</div>
+      ${list.map(bountyHTML).join('')||'<p class="sub" style="padding:14px">No jobs here right now.</p>'}
+      <p class="sub" style="padding:8px 14px 14px;font-size:12.5px">The city and neighbors post small paid jobs. Claim one, do it, mark it done, and the poster approves the payout. Payments are simulated in this demo.</p>`;
+    $('newBounty').onclick=openBountyForm;
+    $('blist').querySelectorAll('[data-bf]').forEach(b=>b.onclick=()=>{S.bfilter=b.dataset.bf;update.bounties()});
+    bindBounties($('blist'));
+  },
+  chat(){
+    if(S.chan==='bot'){
+      $('dietChips').innerHTML=DIETS.map(d=>`<button type="button" data-diet="${d}" aria-pressed="${S.diets.has(d)}">${d}</button>`).join('');
+      $('dietChips').querySelectorAll('[data-diet]').forEach(b=>b.onclick=()=>{const d=b.dataset.diet;S.diets.has(d)?S.diets.delete(d):S.diets.add(d);update.chat()});
+      const sugg=['Where can I get gluten-free pizza?','I need a nut-free birthday cake','Halal dinner tonight?','When is trash pickup?','Is any road closed right now?'];
+      $('msgs').innerHTML=(S.bot.length?'':`<div class="msg">${av('bot')}<div><div class="who">BlockBot</div><div class="bubble">Hi! I know the local spots, what's open on the map, and how city services work. Pick any dietary needs above and ask away.</div><div class="sugg" style="margin-top:8px">${sugg.map(s=>`<button type="button" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div></div></div>`)
+        +S.bot.map(m=>m.role==='user'?`<div class="msg me">${av('you')}<div><div class="who">you</div><div class="bubble">${esc(m.content)}</div></div></div>`
+          :`<div class="msg">${av('bot')}<div><div class="who">BlockBot${m.source==='rules'?' <time>offline mode</time>':''}</div><div class="bubble">${esc(m.content)}</div>${(m.places||[]).map(placeCard).join('')}</div></div>`).join('')
+        +(S.botBusy?`<div class="typing">BlockBot is typing…</div>`:'');
+      $('msgs').querySelectorAll('[data-sugg]').forEach(b=>b.onclick=()=>askBot(b.dataset.sugg));
+      bindPlaceBtns($('msgs'));
+    }else{
+      const list=S.chat[S.chan]||[];
+      $('msgs').innerHTML=list.map(m=>`<div class="msg ${m.who==='you'?'me':''}">${av(m.who)}<div><div class="who">${esc(person(m.who).n)}${m.who==='city'?' <span class="verified">✓</span>':''}<time>${agoStr(m.at)}</time></div><div class="body">${esc(m.text)}</div></div></div>`).join('')||'<p class="sub">No messages yet. Say hi!</p>';
+    }
+    $('msgs').scrollTop=$('msgs').scrollHeight;
+  }
+};
+
+function STORIES(){const fixed=S.posts.filter(p=>p.status==='Fixed').length,closed=S.posts.filter(p=>p.layer==='closure'&&p.status!=='Fixed');return[
+  {id:'new',ic:'＋',n:'Report'},
+  {id:'roads',ic:'🚧',n:'Road alerts',bg:'linear-gradient(160deg,#c2392f,#5c1712)',h:closed.length?`${closed.length} road${closed.length>1?'s':''} blocked right now`:'All roads open',p:closed.length?closed.map(c=>c.place).join(', ')+'. Check the Map tab for detours.':'No closures reported. Drive safe!'},
+  {id:'fixed',ic:'✅',n:'Fixed this week',bg:'linear-gradient(160deg,#1f8a5b,#0e3d2b)',h:`${fixed+6} things fixed this week`,p:'Every me-too helps the city decide what to fix first.'},
+  {id:'fest',ic:'🎃',n:'Fall Festival',bg:'linear-gradient(160deg,#c0592b,#5a2410)',h:'Fall Festival, Saturday 2 to 6 PM',p:'River Park. Food trucks, live music, free entry. Cleanup crew bounty is open!'},
+  {id:'sweep',ic:'🧹',n:'Sweeping',bg:'linear-gradient(160deg,#2d62b8,#152c55)',h:'Street sweeping Tuesday 8 to 11 AM',p:'Elm and Oak. Move your car or get a $45 ticket.'},
+]}
+function postHTML(p){
+  const imgs=[p.img].concat(p.after?[p.after]:[]),mine=p.metoo.has('you'),b=p.bounty_id&&S.bounties.find(x=>x.id===p.bounty_id);
+  return `<article class="post${Date.now()-p.flash<1800?' flash':''}" id="post-${p.id}">
+   <div class="ph">${av(p.who)}<div><b>${esc(person(p.who).n)}</b><small>📍 ${esc(p.place)} · ${p.ago}</small></div><button type="button" class="maplink" data-showmap="${p.id}">View on map</button></div>
+   <div class="media"><div class="slides" style="transform:translateX(-${p.slide*100}%)">${imgs.map((s,i)=>`<img src="${s}" alt="${i?'After':'Photo of'} ${esc(p.cat_name)}">`).join('')}</div>
+    <span class="badge ${p.status==='Fixed'?'fixed':''}">${p.layer!=='action'&&p.status!=='Fixed'?LAYER[p.layer].e+' '+LAYER[p.layer].n+' · ':''}${BADGE[p.status]}</span>
+    ${p.after?`<span class="slabel">${p.slide?'After':'Before'}</span><button type="button" class="nav-btn ${p.slide?'l':'r'}" data-slide="${p.id}" aria-label="Show ${p.slide?'before':'after'} photo">${p.slide?'‹':'›'}</button>`:''}
+   </div>
+   <div class="actions"><button type="button" class="metoo" data-me="${p.id}" aria-pressed="${mine}"><span class="ic">${mine?'✋':'🖐️'}</span>Me too</button><button type="button" data-focus="${p.id}">💬 ${p.comments.length}</button>${b?`<button type="button" class="bountychip" data-gob="${b.id}">💰 ${money(b.reward)} bounty</button>`:''}</div>
+   <div class="count">${count(p)} neighbor${count(p)>1?'s':''} said me too</div>
+   <div class="cap"><b>${esc(person(p.who).n)}</b> ${esc(p.text)}</div>
+   <div class="ai">${p.triage==='claude'?'🤖 Claude':'🏷️'} <span class="mono">#${p.id}</span> · ${esc(p.cat_name)} · ${esc(p.dept)} <span class="pill ${p.status==='Fixed'?'st-Fixed':'p-'+p.pri}">${p.status==='Fixed'?'Fixed':p.pri}</span></div>
+   ${p.summary?`<div class="ai">“${esc(p.summary)}”</div>`:''}
+   <div class="cmts">${p.comments.length>2?`<span class="sub" style="font-size:13px">View all ${p.comments.length} comments</span>`:''}${p.comments.slice(-2).map(c=>`<div class="${c.city?'city':''}"><b>${esc(person(c.who).n)}</b> ${esc(c.text)}</div>`).join('')}</div>
+   <form class="addc" data-c="${p.id}"><input id="c-${p.id}" aria-label="Add a comment" placeholder="Add a comment…" autocomplete="off"><button>Post</button></form>
+  </article>`;
+}
+function bindFeed(v){
+  v.querySelectorAll('[data-story]').forEach(b=>b.onclick=()=>b.dataset.story==='new'?openCompose():openStory(b.dataset.story));
+  v.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{S.filter=b.dataset.filter;update.home()});
+  v.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>act(API('/posts/'+b.dataset.me+'/metoo',{user:'you'})));
+  v.querySelectorAll('[data-slide]').forEach(b=>b.onclick=()=>{const p=S.posts.find(x=>x.id==b.dataset.slide);p.slide=p.slide?0:1;update.home()});
+  v.querySelectorAll('[data-focus]').forEach(b=>b.onclick=()=>$('c-'+b.dataset.focus).focus());
+  v.querySelectorAll('[data-showmap]').forEach(b=>b.onclick=()=>{const p=S.posts.find(x=>x.id==b.dataset.showmap);showOnMap(p.lat,p.lng,{k:'post',id:p.id},p.layer)});
+  v.querySelectorAll('[data-gob]').forEach(b=>b.onclick=()=>go('bounties',{bfilter:'open'}));
+  v.querySelectorAll('form[data-c]').forEach(f=>f.onsubmit=e=>{e.preventDefault();const i=f.querySelector('input'),t=i.value.trim();if(!t)return;i.value='';i.blur();act(API('/posts/'+f.dataset.c+'/comments',{user:'you',text:t}))});
+}
+function showOnMap(lat,lng,sel,layer){S.mapFocus=[lat,lng];S.sel=sel;if(layer)S.mapFilter.add(layer);go('map')}
+function mapCard(){
+  const box=$('mapcard');if(!box)return;const s=S.sel;let h='';
+  if(s&&s.k==='post'){const p=S.posts.find(x=>x.id===s.id);if(p)h=`<img src="${p.after||p.img}" alt=""><div><b>${esc(p.cat_name)}</b><small>📍 ${esc(p.place)} · ${BADGE[p.status]}</small><small>✋ ${count(p)} neighbors · ${esc(p.dept)}</small></div><button class="x" data-x aria-label="Close">×</button><button type="button" data-openpost="${p.id}" style="grid-column:2/-1;justify-self:start">Open post</button>`}
+  if(s&&s.k==='bounty'){const b=S.bounties.find(x=>x.id===s.id);if(b)h=`<div class="em">💰</div><div><b>${esc(b.title)}</b><small>${money(b.reward)} · ${b.poster==='city'?'City ✓':esc(person(b.poster).n)} · ${b.status}</small><small>📍 ${esc(b.place||'')}</small></div><button class="x" data-x aria-label="Close">×</button><button type="button" data-gob style="grid-column:2/-1;justify-self:start">View job</button>`}
+  if(s&&s.k==='place'){const p=CFG.places.find(x=>x.id===s.id);if(p)h=`<div class="em">${PTYPE[p.type]||'📍'}</div><div><b>${esc(p.name)}</b><small>${esc(p.cuisine)} ${p.price?'· '+esc(p.price):''}</small><small>🕒 ${esc(p.hours)} · ${esc(p.address)}</small>${p.diet.map(d=>`<span class="tag">${esc(d)}</span>`).join('')}${p.allergens?`<small style="color:var(--warn)">⚠️ ${esc(p.allergens)}</small>`:''}</div><button class="x" data-x aria-label="Close">×</button>`}
+  box.innerHTML=h?`<div class="mapcard">${h}</div>`:`<div class="legend">Tap a pin for details</div>`;
+  box.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{S.sel=null;mapCard()});
+  box.querySelectorAll('[data-openpost]').forEach(b=>b.onclick=()=>{const id=b.dataset.openpost;go('home',{filter:'all'});const el=$('post-'+id);if(el)$('view').scrollTop=el.offsetTop-60});
+  box.querySelectorAll('[data-gob]').forEach(b=>b.onclick=()=>go('bounties'));
+}
+function bountyHTML(b){
+  const poster=b.poster==='city'?`🏙 City of ${esc(CFG.town)} <span class="verified">✓</span>`:esc(person(b.poster).n);
+  const label={open:'Open',claimed:'Claimed by '+(b.claimer==='you'?'you':person(b.claimer).n),done:'Done · waiting for approval',paid:'Paid'}[b.status];
+  let acts='';
+  if(b.status==='open'&&b.poster!=='you')acts=`<button class="primary" data-claim="${b.id}">Claim job</button>`;
+  if(b.status==='claimed'&&b.claimer==='you')acts=`<button class="primary" data-done="${b.id}">Mark done</button>`;
+  if(b.status==='done'&&b.poster==='you')acts=`<button class="primary" data-approve="${b.id}">Approve & pay ${money(b.reward)}</button>`;
+  if(b.lat!=null)acts+=`<button data-bmap="${b.id}">📍 Map</button>`;
+  return `<div class="bcard"><div class="top"><h3>${esc(b.title)}</h3><span class="rw mono">${money(b.reward)}</span></div>
+    ${b.details?`<p>${esc(b.details)}</p>`:''}
+    <div class="meta"><span>${poster}</span>${b.place?`<span>📍 ${esc(b.place)}</span>`:''}<span class="pill b-${b.status}">${esc(label)}</span><span>${agoStr(b.created_at)}</span></div>
+    ${acts?`<div class="acts">${acts}</div>`:''}</div>`;
+}
+function bindBounties(v){
+  v.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>act(API('/bounties/'+b.dataset.claim+'/claim',{user:'you'}),'Job claimed. It\'s in My jobs.'));
+  v.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>act(API('/bounties/'+b.dataset.done+'/done',{user:'you'}),'Marked done. Waiting for the poster to approve.'));
+  v.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>act(API('/bounties/'+b.dataset.approve+'/approve',{user:'you'}),'Paid out'));
+  v.querySelectorAll('[data-bmap]').forEach(b=>b.onclick=()=>{const x=S.bounties.find(y=>y.id==b.dataset.bmap);S.mapFilter.add('bounty');showOnMap(x.lat,x.lng,{k:'bounty',id:x.id})});
+}
+function placeCard(p){return `<div class="pcard"><b>${PTYPE[p.type]||'📍'} ${esc(p.name)}</b><span class="sub" style="font-size:13px">${esc(p.cuisine)} ${p.price?'· '+esc(p.price):''} · 🕒 ${esc(p.hours)}</span><div>${p.diet.map(d=>`<span class="tag">${esc(d)}</span>`).join('')}</div>${p.allergens?`<span class="warn">⚠️ ${esc(p.allergens)}</span>`:''}<button type="button" data-place="${p.id}">📍 ${esc(p.address)} · Show on map</button></div>`}
+function bindPlaceBtns(v){v.querySelectorAll('[data-place]').forEach(b=>b.onclick=()=>{const p=CFG.places.find(x=>x.id===b.dataset.place);S.mapFilter.add('places');showOnMap(p.lat,p.lng,{k:'place',id:p.id})})}
+
+async function askBot(text){
+  if(S.botBusy)return;
+  S.bot.push({role:'user',content:text});S.botBusy=true;update.chat();
+  try{
+    const r=await API('/assistant',{messages:S.bot.map(m=>({role:m.role,content:m.content})),diets:[...S.diets]});
+    S.bot.push({role:'assistant',content:r.reply,places:r.places,source:r.source});
+  }catch(e){S.bot.push({role:'assistant',content:'Sorry, I couldn\'t answer that: '+e.message,places:[]})}
+  S.botBusy=false;if(S.tab==='chat'&&S.chan==='bot')update.chat();
+}
+
+// ================= overlays: report form, bounty form, updates, story =================
+function sheet(html){closeSheets();const el=document.createElement('div');el.className='sheet';el.innerHTML=html;$('screen').appendChild(el);return el}
+function closeSheets(){$('screen').querySelectorAll('.sheet,.modal,.storyv').forEach(e=>e.remove())}
+function openCompose(){
+  const c={img:null,kind:null,text:'',lat:CFG.center[0],lng:CFG.center[1],busy:false};
+  const el=sheet(`<div class="sheet-h"><button type="button" data-cancel>Cancel</button><b>New report</b><button type="button" class="primary" id="share" disabled>Share</button></div>
+   <div class="sheet-b">
+    <div class="label">1 · Photo</div>
+    <div class="pick">${SAMPLES.map(([k],i)=>`<button type="button" data-pick="${i}" aria-pressed="false" aria-label="Sample photo: ${k}"><img src="${scene(k,false,100+i)}" alt=""></button>`).join('')}<label class="up" id="upLabel">📷<br>Upload<input type="file" accept="image/*" id="upl" aria-label="Upload a photo"></label></div>
+    <div class="label">2 · What's wrong?</div>
+    <textarea id="cap" rows="2" placeholder="e.g. Road blocked on River St, truck broke down"></textarea>
+    <div class="row2"><span class="label">3 · Where? Tap the map to move the pin</span><button type="button" id="gps" style="font-size:12.5px;padding:3px 9px">📍 Use my location</button></div>
+    <div class="minimap"><div class="m" id="mini"></div></div>
+    <div class="check" id="check"></div>
+   </div>`);
+  const mini=MapKit.create($('mini'),[c.lat,c.lng],16),mk=MapKit.pin(mini,c.lat,c.lng,'#1d6b52','📍','Your report');MapKit.resize(mini);
+  const setPin=(lat,lng,pan)=>{c.lat=lat;c.lng=lng;MapKit.move(mini,mk,lat,lng);if(pan)MapKit.center(mini,lat,lng);refreshCheck()};
+  MapKit.onClick(mini,(lat,lng)=>setPin(lat,lng));
+  $('gps').onclick=()=>{if(!navigator.geolocation)return toast('Location isn\'t available in this browser');navigator.geolocation.getCurrentPosition(p=>setPin(p.coords.latitude,p.coords.longitude,true),()=>toast('Couldn\'t get your location. Tap the map instead.'))};
+  el.querySelector('[data-cancel]').onclick=closeSheets;
+  el.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const i=+b.dataset.pick,[k,cap,dx,dy]=SAMPLES[i];c.kind=i;c.img=scene(k,false,100+i);
+    el.querySelectorAll('.pick [aria-pressed]').forEach(x=>x.setAttribute('aria-pressed',x===b));$('upLabel').setAttribute('aria-pressed',false);
+    $('cap').value=c.text=cap;const [lat,lng]=offset(dx,dy);setPin(lat,lng,true)});
+  $('upl').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{c.kind='up';c.img=r.result;el.querySelectorAll('.pick [aria-pressed]').forEach(x=>x.setAttribute('aria-pressed',false));$('upLabel').setAttribute('aria-pressed',true);$('upLabel').style.backgroundImage=`url(${r.result})`;$('upLabel').style.backgroundSize='cover';refreshCheck()};r.readAsDataURL(f)};
+  $('cap').oninput=()=>{c.text=$('cap').value;refreshCheck()};
+  function refreshCheck(){
+    if(!$('check'))return;
+    const near=S.posts.filter(p=>p.status!=='Fixed'&&dist(p.lat,p.lng,c.lat,c.lng)<60);
+    $('check').innerHTML=`<div class="label">${S.mode==='claude'?'Claude sorts it when you share':'Checks'}</div>
+      <div class="r"><span class="k">Photo</span>${c.img?'✓ Added':'<span class="bad">Pick or upload a photo</span>'}</div>
+      <div class="r"><span class="k">Pin</span>✓ ${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}</div>
+      ${near.length?`<div class="r" style="color:var(--warn)"><span class="k">Nearby</span>${near.length} open report${near.length>1?'s':''} within 60 m: ${near.map(p=>esc(p.cat_name)).join(', ')}</div>`:''}`;
+    $('share').disabled=!(c.img&&c.text.trim().length>4)||c.busy;
+  }
+  async function publish(force){
+    c.busy=true;refreshCheck();toast(S.mode==='claude'?'Claude is sorting your report…':'Sending…');
+    try{
+      const r=await API('/posts',{text:c.text,lat:c.lat,lng:c.lng,author:'you',image:c.kind==='up'?c.img:null,force});
+      if(r.duplicate)dupModal(hydrate(r.duplicate),()=>publish(true));
+      else{closeSheets();go('home',{filter:'all'});toast('Posted as #'+r.post.id+(r.triage==='claude'?' · sorted by Claude':''));await refresh(true)}
+    }catch(e){toast(e.message)}
+    c.busy=false;refreshCheck();
+  }
+  $('share').onclick=()=>publish(false);
+  refreshCheck();
+}
+function dist(a,b,c,d){const dy=(a-c)*111111,dx=(b-d)*111111*Math.cos(a*Math.PI/180);return Math.hypot(dx,dy)}
+function dupModal(d,postAnyway){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div><img src="${d.img}" alt=""><h3>Neighbors already reported this</h3><p>${count(d)} people reported this ${esc(d.cat_name.toLowerCase())} right here. Adding your me-too moves it up the city's list faster than a new post.</p><button type="button" class="primary" id="addme">Add my me-too</button><button type="button" id="anyway">Post anyway</button></div>`;
+  $('screen').appendChild(m);
+  m.querySelector('#addme').onclick=()=>{closeSheets();go('home',{filter:'all'});act(API('/posts/'+d.id+'/metoo',{user:'you',add:true}),'Added your me-too to #'+d.id).then(()=>{const el=$('post-'+d.id);if(el)$('view').scrollTop=el.offsetTop-60})};
+  m.querySelector('#anyway').onclick=()=>{m.remove();postAnyway()};
+}
+function openBountyForm(){
+  const el=sheet(`<div class="sheet-h"><button type="button" data-cancel>Cancel</button><b>Post a job</b><button type="button" class="primary" id="bpost">Post</button></div>
+   <div class="sheet-b">
+    <label class="label" for="bt">What needs doing?</label><input type="text" id="bt" placeholder="e.g. Shovel my driveway Saturday morning">
+    <label class="label" for="bd">Details</label><textarea id="bd" rows="3" placeholder="When, how long it takes, anything to bring"></textarea>
+    <label class="label" for="br">Reward ($)</label><input type="number" id="br" min="1" max="1000" step="1" value="20">
+    <label class="label" for="bp">Where (optional)</label><input type="text" id="bp" placeholder="e.g. Oak St">
+    <p class="sub" style="font-size:13px">The reward is held from your wallet (${money(S.wallet)}) and paid when you approve the finished job.</p>
+   </div>`);
+  el.querySelector('[data-cancel]').onclick=closeSheets;
+  $('bpost').onclick=()=>act(API('/bounties',{title:$('bt').value,details:$('bd').value,reward:+$('br').value,place:$('bp').value,poster:'you'}),'Job posted').then(r=>{if(r){closeSheets();S.bfilter='mine';update.bounties()}});
+}
+function openUpdates(){
+  const el=sheet(`<div class="sheet-h"><b>Updates</b><button type="button" data-cancel>Close</button></div><div class="list" style="overflow:auto">${S.notifs.map(n=>`<div class="it ${n.isNew?'new':''}"><div class="av" style="background:var(--sunk);font-size:20px">${n.ic}</div><span>${esc(n.t)}<small>${n.ago}</small></span>${n.img?`<img src="${n.img}" alt="">`:'<span></span>'}</div>`).join('')||'<p class="sub" style="padding:14px">No updates yet.</p>'}</div>`);
+  el.querySelector('[data-cancel]').onclick=closeSheets;
+  if(S.notifs.some(n=>n.isNew))act(API('/notifs/read',{}));
+}
+function openStory(id){
+  const s=STORIES().find(x=>x.id===id);S.seenStories.add(id);
+  const el=document.createElement('div');el.className='storyv';el.style.background=s.bg;
+  el.innerHTML=`<div class="bars"><i><b></b></i></div><div class="sv-h"><span>🏙 CityOf${esc(CFG.town)} ✓</span><button type="button" aria-label="Close story">×</button></div><div class="sv-b"><div class="big">${s.ic}</div><h3>${esc(s.h)}</h3><p>${esc(s.p)}</p></div>`;
+  $('screen').appendChild(el);const close=()=>{el.remove();update.home&&S.tab==='home'&&update.home()};
+  el.querySelector('.sv-h button').onclick=close;el.querySelector('.bars b').addEventListener('animationend',close);
+}
+
+// ================= city desk =================
+let deskMap=null;
+function renderDesk(){
+  $('mode').textContent=S.mode==='claude'?'· sorted by Claude':'· keyword rules (offline)';
+  const open=S.posts.filter(p=>p.status!=='Fixed');
+  $('sOpen').textContent=open.length;$('sClosed').textContent=open.filter(p=>p.layer==='closure').length;
+  $('sHaz').textContent=open.filter(p=>p.layer==='hazard').length;$('sBounty').textContent=S.bounties.filter(b=>b.status==='open').length;
+  if(!deskMap){deskMap=MapKit.create($('deskmapEl'),CFG.center,15);MapKit.resize(deskMap)}
+  MapKit.clear(deskMap);
+  open.forEach(p=>{const L_=LAYER[p.layer];MapKit.pin(deskMap,p.lat,p.lng,L_.c,L_.e,'#'+p.id+' '+p.cat_name,()=>{S.deskSel=p.id;renderDesk();const el=$('tk-'+p.id);if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'})})});
+  S.bounties.filter(b=>b.lat!=null&&b.status!=='paid').forEach(b=>MapKit.pin(deskMap,b.lat,b.lng,'#1d6b52','💰',b.title,null,26));
+  if(focusIn('.desk .tickets'))return;
+  const order={High:0,Medium:1,Low:2},layerOrder={closure:0,hazard:1,action:2};
+  const list=S.posts.slice().sort((a,b)=>(a.status==='Fixed')-(b.status==='Fixed')||layerOrder[a.layer]-layerOrder[b.layer]||order[a.pri]-order[b.pri]||count(b)-count(a));
+  $('tickets').innerHTML=list.map(p=>`<li class="tk${Date.now()-p.flash<1800?' flash':''}${S.deskSel===p.id?' sel':''}" id="tk-${p.id}"><img src="${p.after||p.img}" alt="">
+    <h3><span class="mono" style="color:var(--muted);font-weight:500">#${p.id}</span> ${LAYER[p.layer].e} ${esc(p.cat_name)}</h3>
+    <select data-st="${p.id}" aria-label="Status for ticket ${p.id}">${STATUSES.map(s=>`<option${s===p.status?' selected':''}>${s}</option>`).join('')}</select>
+    <div class="meta"><span class="pill ${p.status==='Fixed'?'st-Fixed':'p-'+p.pri}">${p.status==='Fixed'?'Fixed':p.pri}</span><span>📍 ${esc(p.place)}</span><span>${esc(p.dept)}</span><span>✋ ${count(p)}</span><span>by ${esc(person(p.who).n)}</span>${p.triage==='claude'?'<span>🤖 Claude</span>':''}</div>
+    ${p.status!=='Fixed'&&!p.bounty_id&&p.layer==='action'?`<div class="bform"><button type="button" class="bbtn" data-bopen="${p.id}">💰 Post as community bounty</button></div>`:''}
+    ${p.bounty_id?`<div class="bform"><span class="sub" style="font-size:12.5px">💰 Bounty #${p.bounty_id} posted</span></div>`:''}</li>`).join('');
+  $('tickets').querySelectorAll('[data-st]').forEach(s=>s.onchange=()=>{s.blur();act(API('/posts/'+s.dataset.st+'/status',{status:s.value}))});
+  $('tickets').querySelectorAll('[data-bopen]').forEach(b=>b.onclick=()=>{const p=S.posts.find(x=>x.id==b.dataset.bopen);const f=b.parentElement;
+    f.innerHTML=`<label class="sub" style="font-size:12.5px" for="rw-${p.id}">Reward $</label><input type="number" id="rw-${p.id}" value="40" min="1" max="1000"><button type="button" class="primary bbtn" id="rb-${p.id}">Post bounty</button>`;
+    $('rw-'+p.id).focus();
+    $('rb-'+p.id).onclick=()=>{document.activeElement.blur();act(API('/bounties',{title:`Fix: ${p.cat_name} at ${p.place}`,details:`City job from ticket #${p.id}. ${p.summary||p.text}`,reward:+$('rw-'+p.id).value,poster:'city',post_id:p.id}),'City bounty posted')}});
+  const cb=S.bounties.filter(b=>b.poster==='city'&&b.status!=='paid');
+  $('cityBounties').innerHTML=cb.map(b=>`<li class="tk" style="grid-template-columns:minmax(0,1fr) auto"><h3>💰 ${esc(b.title)} <span class="mono" style="color:var(--accent)">${money(b.reward)}</span></h3>
+     ${b.status==='done'?`<button class="primary" data-capprove="${b.id}">Approve & pay</button>`:'<span></span>'}
+     <div class="meta" style="grid-column:1/-1"><span class="pill b-${b.status}">${b.status==='open'?'Open':b.status==='claimed'?'Claimed by '+esc(person(b.claimer).n):'Done, needs approval'}</span>${b.place?`<span>📍 ${esc(b.place)}</span>`:''}</div></li>`).join('')||'<li class="sub" style="padding:6px 2px">No open city bounties.</li>';
+  $('cityBounties').querySelectorAll('[data-capprove]').forEach(b=>b.onclick=()=>act(API('/bounties/'+b.dataset.capprove+'/approve',{user:'city'}),'City paid the bounty'));
+}
+
+// ================= wire up =================
+$('bell').onclick=openUpdates;
+$('neighbor').onclick=()=>act(API('/simulate',{}),r=>r.message);
+$('reset').onclick=()=>{closeSheets();S.ver=-1;S.posts=[];S.bot=[];act(API('/reset',{}),'Demo reset')};
+$('cnews').onsubmit=e=>{e.preventDefault();const t=$('cnewsText').value.trim();if(!t)return;$('cnewsText').value='';act(API('/channels/city-news/messages',{user:'city',text:t}),'Posted to #city-news')};
+
+(async function start(){
+  try{CFG=await API('/config')}catch(e){document.body.insertAdjacentHTML('afterbegin','<p style="padding:20px">Can\'t reach the BlockBoard server. Start it with <code>uvicorn app:app --reload</code> and refresh.</p>');return}
+  $('town').textContent='· '+CFG.town;
+  await MapKit.load();
+  await refresh(true);
+  $('foot').textContent=`Python (FastAPI + SQLite) backend. Reports and BlockBot ${S.mode==='claude'?'are sorted by Claude':'use Claude when an API key is set, keyword rules otherwise'}. Map: ${MapKit.google?'Google Maps':'OpenStreetMap (set GOOGLE_MAPS_API_KEY to switch to Google Maps)'}. Places and FAQs are sample data in places.json. Bounty payments are simulated.`;
+  setInterval(()=>refresh(),2500);
+})();
+})();
+</script>
+</body>
+</html>
