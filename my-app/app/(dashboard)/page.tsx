@@ -2,18 +2,21 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import CommunityFeed from "@/components/feed/CommunityFeed";
 import CivicMap from "@/components/map/CivicMap";
 import MapLegend from "@/components/map/MapLegend";
-import { CITY_POSTS, buildMarkers, issueMarkerId, postMarkerId } from "@/lib/db/seed";
+import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
 import { useIssues } from "@/lib/hooks/useIssues";
+import { usePosts } from "@/lib/hooks/usePosts";
 import { severityBadgeClass, sortByPriority } from "@/lib/utils/severity";
 
 export default function Home() {
   const { reports } = useIssues();
+  const { posts, isLive: postsLive, toggleReaction } = usePosts();
   // Which map pin is focused; shared by the map, ticket list, and feed.
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const markers = useMemo(() => buildMarkers(reports, CITY_POSTS), [reports]);
+  const markers = useMemo(() => buildMarkers(reports, posts), [reports, posts]);
   const tickets = useMemo(() => sortByPriority(reports), [reports]);
 
   return (
@@ -25,35 +28,14 @@ export default function Home() {
         aria-label="Community feed"
         className="min-w-0 overflow-y-auto border-black/5 px-4 py-6 sm:px-6 lg:border-r dark:border-white/10"
       >
-        <div className="mx-auto flex max-w-xl flex-col gap-6">
-          {CITY_POSTS.map((post) => (
-            <article
-              key={post.id}
-              className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900"
-            >
-              <div className="flex items-center gap-3 px-4 py-3">
-                <span className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500" />
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-semibold">{post.author}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(postMarkerId(post.id))}
-                    className="text-xs text-zinc-500 hover:text-emerald-600 hover:underline"
-                    aria-label={`Show ${post.location} on map`}
-                  >
-                    📍 {post.location}
-                  </button>
-                </div>
-              </div>
-              <div className="aspect-square w-full bg-gradient-to-br from-emerald-100 to-teal-200 dark:from-zinc-800 dark:to-zinc-700" />
-              <div className="px-4 py-3">
-                <p className="text-sm">
-                  <span className="font-semibold">{post.author}</span> {post.caption}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
+        <CommunityFeed
+          posts={posts}
+          selectedId={selectedId}
+          showTimes={postsLive}
+          onSelect={setSelectedId}
+          // Failed reactions roll back automatically; nothing else to show.
+          onToggleReaction={(postId) => void toggleReaction(postId).catch(() => {})}
+        />
       </section>
 
       {/* RIGHT: map on top, tickets below, together filling the column */}
