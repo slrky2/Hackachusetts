@@ -13,18 +13,23 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { APP_CONFIG, MAP_CONFIG } from "@/config/app";
-import { directionsUrl, type LatLng } from "@/lib/maps";
+import { directionsUrl, type LatLng, type UserPosition } from "@/lib/maps";
 import { formatDollars } from "@/lib/utils";
 import { BOUNTY_COLOR, POST_COLOR, SEVERITY_COLORS } from "@/lib/utils/severity";
 import type { Bounty, CityMarker } from "@/types";
+import MapErrorBoundary from "./MapErrorBoundary";
+import { CenterOnceOn, MyLocationButton } from "./MapLocationControls";
+import UserLocationMarker from "./UserLocationMarker";
 
 interface CivicMapProps {
   markers: CityMarker[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   defaultZoom?: number;
-  /** When set, shows a "you are here" dot and pans to it. */
-  userLocation?: LatLng | null;
+  /** When set, shows Google's blue "you are here" dot. */
+  userLocation?: UserPosition | null;
+  /** Center on the blue dot the first time it's known (default true). */
+  centerOnUser?: boolean;
 }
 
 /**
@@ -37,6 +42,7 @@ export default function CivicMap({
   onSelect,
   defaultZoom = APP_CONFIG.defaultMapZoom,
   userLocation = null,
+  centerOnUser = true,
 }: CivicMapProps) {
   if (!MAP_CONFIG.apiKey) {
     return (
@@ -49,6 +55,7 @@ export default function CivicMap({
   const selected = markers.find((m) => m.id === selectedId) ?? null;
 
   return (
+    <MapErrorBoundary>
     <APIProvider apiKey={MAP_CONFIG.apiKey}>
       <Map
         className="h-full w-full"
@@ -71,16 +78,14 @@ export default function CivicMap({
           />
         ))}
 
-        {userLocation && (
-          <AdvancedMarker position={userLocation} title="You are here" zIndex={500}>
-            <span className="block h-4 w-4 rounded-full border-2 border-white bg-blue-600 shadow-md ring-4 ring-blue-500/30" />
-          </AdvancedMarker>
-        )}
+        {userLocation && <UserLocationMarker position={userLocation} />}
 
-        <PanTo position={userLocation} />
+        <CenterOnceOn position={centerOnUser ? userLocation : null} />
+        <MyLocationButton position={userLocation} />
         <PanTo position={selected} />
       </Map>
     </APIProvider>
+    </MapErrorBoundary>
   );
 }
 
@@ -187,11 +192,21 @@ function MarkerDetails({ marker }: { marker: CityMarker }) {
     const { report } = marker;
     return (
       <div className="max-w-[220px] space-y-1 text-zinc-900">
+        {report.photoUrls[0] && (
+          // eslint-disable-next-line @next/next/no-img-element -- served from our in-memory API
+          <img
+            src={report.photoUrls[0]}
+            alt={`Photo of: ${report.title}`}
+            className="mb-1 aspect-video w-full rounded-md object-cover"
+          />
+        )}
         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
           Issue · {report.category}
         </p>
         <p className="text-sm font-semibold leading-snug">{report.title}</p>
-        <p className="text-xs text-zinc-600">{report.location}</p>
+        <p className="text-xs text-zinc-600">
+          {report.location} · by {report.isMine ? "you" : report.authorName}
+        </p>
         <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
           <span
             className="rounded-full px-2 py-0.5 font-medium text-white"

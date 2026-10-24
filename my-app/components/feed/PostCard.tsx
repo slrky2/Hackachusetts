@@ -12,6 +12,7 @@ const KIND_STYLES: Record<PostKind, { label: string; className: string }> = {
   volunteer: { label: "Volunteer", className: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300" },
   lost_found: { label: "Lost & found", className: "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300" },
   community: { label: "Neighbors", className: "bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-300" },
+  report: { label: "Problem reported", className: "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300" },
 };
 
 interface PostCardProps {
@@ -48,7 +49,7 @@ export default function PostCard({ post, isSelected, showTime, onShowOnMap, onTo
         <Avatar name={post.author.name} official={isOfficial} />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 truncate text-sm font-semibold">
-            {post.author.name}
+            {post.isMine ? "You" : post.author.name}
             {isOfficial && <OfficialBadge />}
           </p>
           <p className="truncate text-xs text-zinc-500">
@@ -88,8 +89,10 @@ export default function PostCard({ post, isSelected, showTime, onShowOnMap, onTo
         </figure>
       )}
 
+      {post.photoUrls && post.photoUrls.length > 0 && <ReportPhotos urls={post.photoUrls} title={post.title ?? post.caption} />}
+
       <div className="space-y-2 px-4 py-3">
-        <p className="text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">{post.caption}</p>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">{post.caption}</p>
         {post.when && (
           <p className="flex items-center gap-1.5 text-sm font-medium text-violet-700 dark:text-violet-300">
             <CalendarIcon />
@@ -116,7 +119,7 @@ export default function PostCard({ post, isSelected, showTime, onShowOnMap, onTo
           <span className={post.hasReacted ? "text-white/80" : "text-zinc-500"}>{post.reactions}</span>
         </button>
 
-        {post.coords ? (
+        {post.coords || post.issueId !== undefined ? (
           <button
             type="button"
             onClick={onShowOnMap}
@@ -130,6 +133,35 @@ export default function PostCard({ post, isSelected, showTime, onShowOnMap, onTo
         )}
       </footer>
     </article>
+  );
+}
+
+/** Photos a resident attached to a report; swipe when there's more than one. */
+function ReportPhotos({ urls, title }: { urls: string[]; title: string }) {
+  return (
+    <div className="relative mt-1">
+      <ul
+        className="flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto bg-zinc-100 dark:bg-zinc-800"
+        aria-label={`${urls.length} ${urls.length === 1 ? "photo" : "photos"}`}
+      >
+        {urls.map((url, i) => (
+          <li key={url} className="h-full w-full shrink-0 snap-center">
+            {/* eslint-disable-next-line @next/next/no-img-element -- served from our in-memory API */}
+            <img
+              src={url}
+              alt={`Photo ${i + 1} of ${urls.length}: ${title}`}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          </li>
+        ))}
+      </ul>
+      {urls.length > 1 && (
+        <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
+          {urls.length} photos · swipe
+        </span>
+      )}
+    </div>
   );
 }
 
