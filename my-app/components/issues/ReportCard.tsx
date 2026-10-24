@@ -117,7 +117,7 @@ export default function ReportCard({
             )}
           </div>
 
-          <div className="mt-2">
+          <div className="mt-2 flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={onSelect}
@@ -127,6 +127,10 @@ export default function ReportCard({
             >
               💬 {commentCount} {commentCount === 1 ? "comment" : "comments"}
             </button>
+            {/* Reported problems are fixed by the city, not paid out as bounties. */}
+            <span className="rounded-lg bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              🏛 City crew
+            </span>
           </div>
         </div>
       </div>

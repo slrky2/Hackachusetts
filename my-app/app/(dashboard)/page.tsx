@@ -7,6 +7,7 @@ import CivicMap from "@/components/map/CivicMap";
 import MapLegend from "@/components/map/MapLegend";
 import { APP_CONFIG } from "@/config/app";
 import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
+import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
 import { usePosts } from "@/lib/hooks/usePosts";
 import { useUserLocation } from "@/lib/hooks/useUserLocation";
@@ -15,6 +16,7 @@ import { severityBadgeClass } from "@/lib/utils/severity";
 export default function Home() {
   const { reports, isLive } = useIssues();
   const { posts, isLive: postsLive, toggleReaction } = usePosts();
+  const { bounties } = useBounties();
   // Center the map on the user (blue dot + accuracy circle) once the browser
   // shares their location; otherwise it stays on the city center.
   const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
@@ -22,7 +24,7 @@ export default function Home() {
   // Which map pin is focused; shared by the map, ticket list, and feed.
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const markers = useMemo(() => buildMarkers(reports, posts), [reports, posts]);
+  const markers = useMemo(() => buildMarkers(reports, posts, bounties), [reports, posts, bounties]);
   // Newest first (the server's order), so freshly filed reports sit on top.
   const tickets = reports;
 
@@ -92,7 +94,7 @@ export default function Home() {
                       type="button"
                       onClick={() => setSelectedId(markerId)}
                       aria-pressed={isSelected}
-                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-black/[.03] dark:hover:bg-white/[.04] ${
+                      className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-black/[.03] dark:hover:bg-white/[.04] ${
                         isSelected ? "bg-emerald-50 dark:bg-emerald-500/10" : ""
                       }`}
                     >
@@ -108,6 +110,10 @@ export default function Home() {
                           <span>▲ {ticket.upvotes}</span>
                         </div>
                       </div>
+                      {/* Repairs like these need city equipment, so city crews handle them. */}
+                      <span className="shrink-0 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        🏛 City crew
+                      </span>
                     </button>
                   </li>
                 );

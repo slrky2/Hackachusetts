@@ -1,4 +1,4 @@
-import type { CityMarker, CityPost, CityReport, CityTicket, IssueComment } from "@/types";
+import type { Bounty, CityMarker, CityPost, CityReport, CityTicket, IssueComment } from "@/types";
 
 /**
  * In-memory seed data for the POC, placed around Lowell, MA
@@ -414,10 +414,18 @@ export function fallbackPosts(): CityPost[] {
 
 export const issueMarkerId = (id: number) => `issue-${id}`;
 export const postMarkerId = (id: number) => `post-${id}`;
+export const bountyMarkerId = (id: number) => `bounty-${id}`;
 
-/** Flatten reports and located posts into the marker list the map renders. */
-export function buildMarkers(reports: CityReport[], posts: CityPost[]): CityMarker[] {
-  return [
+/**
+ * Flatten reports, located posts and bounties into the marker list the map
+ * renders. Bounties get a pin when they have a location and aren't paid yet.
+ */
+export function buildMarkers(
+  reports: CityReport[],
+  posts: CityPost[],
+  bounties: Bounty[] = [],
+): CityMarker[] {
+  const markers: CityMarker[] = [
     ...reports.map((report) => ({
       id: issueMarkerId(report.id),
       kind: "issue" as const,
@@ -433,4 +441,16 @@ export function buildMarkers(reports: CityReport[], posts: CityPost[]): CityMark
         : [],
     ),
   ];
+
+  for (const bounty of bounties) {
+    if (bounty.status === "paid" || bounty.lat === null || bounty.lng === null) continue;
+    markers.push({
+      id: bountyMarkerId(bounty.id),
+      kind: "bounty",
+      lat: bounty.lat,
+      lng: bounty.lng,
+      bounty,
+    });
+  }
+  return markers;
 }

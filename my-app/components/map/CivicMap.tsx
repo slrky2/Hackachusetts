@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import {
   APIProvider,
   AdvancedMarker,
@@ -12,11 +13,12 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { APP_CONFIG, MAP_CONFIG } from "@/config/app";
-import type { LatLng, UserPosition } from "@/lib/maps";
+import { directionsUrl, type LatLng, type UserPosition } from "@/lib/maps";
+import { formatDollars } from "@/lib/utils";
+import { BOUNTY_COLOR, POST_COLOR, SEVERITY_COLORS } from "@/lib/utils/severity";
+import type { Bounty, CityMarker } from "@/types";
 import MapErrorBoundary from "./MapErrorBoundary";
 import UserLocationMarker from "./UserLocationMarker";
-import { POST_COLOR, SEVERITY_COLORS } from "@/lib/utils/severity";
-import type { CityMarker } from "@/types";
 
 interface CivicMapProps {
   markers: CityMarker[];
@@ -92,9 +94,13 @@ function MarkerWithInfo({
   onSelect: (id: string | null) => void;
 }) {
   const [markerRef, markerEl] = useAdvancedMarkerRef();
-  const color = marker.kind === "issue" ? SEVERITY_COLORS[marker.report.severity] : POST_COLOR;
+  const color = pinColor(marker);
   const label =
-    marker.kind === "issue" ? marker.report.title : `Post by ${marker.post.author.name}`;
+    marker.kind === "issue"
+      ? marker.report.title
+      : marker.kind === "bounty"
+        ? `Bounty: ${marker.bounty.title}`
+        : `Post by ${marker.post.author.name}`;
 
   return (
     <>
@@ -109,6 +115,7 @@ function MarkerWithInfo({
           background={color}
           borderColor="#ffffff"
           glyphColor="#ffffff"
+          glyphText={marker.kind === "bounty" ? "$" : undefined}
           scale={isSelected ? 1.3 : marker.kind === "post" ? 0.85 : 1}
         />
       </AdvancedMarker>
@@ -122,8 +129,60 @@ function MarkerWithInfo({
   );
 }
 
+function pinColor(marker: CityMarker): string {
+  if (marker.kind === "post") return POST_COLOR;
+  if (marker.kind === "bounty") return BOUNTY_COLOR;
+  return SEVERITY_COLORS[marker.report.severity];
+}
+
+const BOUNTY_STATUS_TEXT: Record<Bounty["status"], string> = {
+  open: "Open",
+  claimed: "Claimed",
+  done: "Done · awaiting approval",
+  paid: "Paid",
+};
+
+/** Reward, status and a link to the job on the Bounties page. */
+function BountyLine({ bounty }: { bounty: Bounty }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+      <span className="font-bold text-emerald-700">💰 Bounty {formatDollars(bounty.reward)}</span>
+      <span className="text-zinc-600">{BOUNTY_STATUS_TEXT[bounty.status]}</span>
+      <Link href={`/bounties?job=${bounty.id}`} className="font-semibold text-emerald-700 underline">
+        View job
+      </Link>
+      <a
+        href={directionsUrl(
+          bounty.lat !== null && bounty.lng !== null ? { lat: bounty.lat, lng: bounty.lng } : null,
+          bounty.place,
+        )}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Directions to ${bounty.place} (opens Google Maps in a new tab)`}
+        className="font-semibold text-emerald-700 underline"
+      >
+        Directions
+      </a>
+    </div>
+  );
+}
+
 function MarkerDetails({ marker }: { marker: CityMarker }) {
   // Info windows always render on a white background, so use fixed dark text.
+  if (marker.kind === "bounty") {
+    const { bounty } = marker;
+    return (
+      <div className="max-w-[220px] space-y-1 text-zinc-900">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+          Bounty · {bounty.posterName}
+        </p>
+        <p className="text-sm font-semibold leading-snug">{bounty.title}</p>
+        {bounty.place && <p className="text-xs text-zinc-600">{bounty.place}</p>}
+        <BountyLine bounty={bounty} />
+      </div>
+    );
+  }
+
   if (marker.kind === "issue") {
     const { report } = marker;
     return (
@@ -146,13 +205,14 @@ function MarkerDetails({ marker }: { marker: CityMarker }) {
         <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
           <span
             className="rounded-full px-2 py-0.5 font-medium text-white"
-            style={{ background: SEVERITY_COLORS[report.severity] }}
+            style={{ background: pinColor(marker) }}
           >
             {report.severity}
           </span>
           <span className="text-zinc-600">
             ▲ {report.upvotes} · 💬 {report.comments.length}
           </span>
+          <span className="font-semibold text-zinc-700">🏛 City crew job</span>
         </div>
       </div>
     );

@@ -7,6 +7,7 @@ import CivicMap from "@/components/map/CivicMap";
 import MapLegend from "@/components/map/MapLegend";
 import { APP_CONFIG } from "@/config/app";
 import { buildMarkers, issueMarkerId } from "@/lib/db/seed";
+import { useBounties } from "@/lib/hooks/useBounties";
 import { useIssues } from "@/lib/hooks/useIssues";
 import { useUserLocation, type UserLocation } from "@/lib/hooks/useUserLocation";
 import { SEVERITY_LEVELS, sortByPriority } from "@/lib/utils/severity";
@@ -22,6 +23,7 @@ const CITY_NAME = APP_CONFIG.defaultCity.split(",")[0];
  */
 export default function MapPage() {
   const { reports, error, isLive, toggleUpvote, addComment } = useIssues();
+  const { bounties } = useBounties();
   const location = useUserLocation(APP_CONFIG.defaultMapCenter, APP_CONFIG.localAreaRadiusKm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<PriorityFilter>("All");
@@ -30,7 +32,11 @@ export default function MapPage() {
     () => sortByPriority(filter === "All" ? reports : reports.filter((r) => r.severity === filter)),
     [reports, filter],
   );
-  const markers = useMemo(() => buildMarkers(visible, []), [visible]);
+  // Bounty pins only show under "All"; the priority filters are about reports.
+  const markers = useMemo(
+    () => buildMarkers(visible, [], filter === "All" ? bounties : []),
+    [visible, bounties, filter],
+  );
   const counts = useMemo(() => {
     const byLevel = { All: reports.length, High: 0, Medium: 0, Low: 0 };
     for (const r of reports) byLevel[r.severity] += 1;
