@@ -1,9 +1,48 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# CivicConnect — Codebase Guide for AI Agents
 
-## This is NOT the Next.js you know
+## Project overview
+Community / city platform built with **Next.js 16 App Router**, **TypeScript**, and **Tailwind CSS v4**.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+## Directory map
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+| Path | Purpose |
+|---|---|
+| `app/(auth)/` | Public auth routes (login, register, forgot-password) |
+| `app/(dashboard)/` | Protected app routes; share a common layout with sidebar + top nav |
+| `app/api/` | Next.js Route Handlers (REST API) |
+| `components/layout/` | Sidebar, TopNav — global shell |
+| `components/map/` | Google Maps wrapper, issue markers, report drawer |
+| `components/issues/` | Issue cards, create form |
+| `components/bounties/` | Bounty cards |
+| `components/channels/` | Message thread, message input |
+| `components/chatbot/` | CivicBot chat UI, dietary prefs modal |
+| `components/notifications/` | Notification bell |
+| `lib/api/` | Typed fetch client (`api.get / post / put / patch / delete`) |
+| `lib/ai/prompts/` | System prompt builder for CivicBot (injects dietary/allergen profile) |
+| `lib/db/` | DB client stub — swap with Prisma / Drizzle / Supabase |
+| `lib/hooks/` | SWR data hooks: `useAuth`, `useIssues`, `useBounties` |
+| `lib/maps/` | Geocoding helpers |
+| `lib/validators/` | Zod schemas for issues, bounties, auth |
+| `lib/utils/` | `cn()`, `timeAgo()`, `formatCategory()` |
+| `types/index.ts` | All shared TypeScript types |
+| `config/app.ts` | App-wide constants (city name, map defaults, API routes) |
+| `store/index.ts` | Client state (Zustand stub) |
 
-<!-- END:nextjs-agent-rules -->
+## Key dependencies to install before building
+```bash
+npm install swr zod clsx tailwind-merge @vis.gl/react-google-maps openai
+npm install -D @types/google.maps
+```
+
+## Environment variables
+Copy `.env.local.example` → `.env.local` and fill in:
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- `OPENAI_API_KEY`
+- `DATABASE_URL`
+- `NEXTAUTH_SECRET`
+
+## Coding conventions
+- All client components start with `"use client"`.
+- Use `cn()` from `lib/utils` for conditional Tailwind classes.
+- Validate all API inputs with the Zod schemas in `lib/validators/`.
+- Never expose API keys client-side (except `NEXT_PUBLIC_*` Map key).
