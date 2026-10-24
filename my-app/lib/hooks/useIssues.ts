@@ -1,10 +1,11 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { api } from "@/lib/api/client";
 import { seedReports } from "@/lib/db/seed";
-import type { CityReport } from "@/types";
+import type { CreateReportInput } from "@/lib/validators/issue";
+import type { CityPost, CityReport } from "@/types";
 
 // Shown during SSR / before the first fetch so the UI never renders empty.
 const FALLBACK_REPORTS = seedReports();
@@ -106,5 +107,23 @@ export function useIssues() {
     });
   }
 
-  return { reports, error, isLive: data !== undefined, toggleUpvote, addComment };
+  /** File a new report. Throws with the server's message on failure. */
+  async function createReport(input: CreateReportInput): Promise<CityReport> {
+    if (!viewerId) throw new Error("Still loading, try again in a moment.");
+    const { report, post } = await api.post<{ report: CityReport; post: CityPost }>("/api/issues", {
+      ...input,
+      viewerId,
+    });
+    // Put the new report on top. Every page using this hook updates.
+    await mutate((current) => [report, ...(current ?? FALLBACK_REPORTS)], { revalidate: false });
+    // Same for its feed post (cached by usePosts under /api/posts?...).
+    await globalMutate<CityPost[]>(
+      (key) => typeof key === "string" && key.startsWith("/api/posts"),
+      (current) => (current ? [post, ...current] : current),
+      { revalidate: true },
+    );
+    return report;
+  }
+
+  return { reports, error, isLive: data !== undefined, toggleUpvote, addComment, createReport };
 }

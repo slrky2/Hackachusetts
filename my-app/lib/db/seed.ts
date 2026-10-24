@@ -150,12 +150,30 @@ export const SEED_ISSUES: SeedIssue[] = [
 export function seedReports(): CityReport[] {
   return SEED_ISSUES.map((seed) => ({
     ...seed.ticket,
+    description: seed.ticket.title,
+    photoUrls: [],
+    authorName: seedReporterName(seed.ticket.id),
+    isMine: false,
     reportedAt: seed.reportedAt,
     upvotes: seed.upvotes,
     hasUpvoted: false,
     comments: seed.comments,
   }));
 }
+
+// Who "filed" each seed report (seed reports have no real author).
+const SEED_REPORTERS = [
+  "downtown_commuter",
+  "riverwalk_runner",
+  "kearney_shopkeeper",
+  "centralville_neighbor",
+  "umass_cyclist",
+  "acre_neighbor",
+  "back_central_resident",
+  "highlands_parent",
+];
+export const seedReporterName = (issueId: number) =>
+  SEED_REPORTERS[(issueId - 1) % SEED_REPORTERS.length];
 
 // ─── Feed posts ───────────────────────────────────────────────────────────────
 // Mock content for the demo. Photos are openly licensed from Wikimedia Commons;
@@ -415,9 +433,10 @@ export function buildMarkers(
       lng: report.lng,
       report,
     })),
-    // Citywide posts have no coords, so they stay in the feed only.
+    // Citywide posts have no coords, so they stay in the feed only. Posts made
+    // from a report reuse the report's pin instead of adding a second one.
     ...posts.flatMap((post) =>
-      post.coords
+      post.coords && post.issueId === undefined
         ? [{ id: postMarkerId(post.id), kind: "post" as const, ...post.coords, post }]
         : [],
     ),

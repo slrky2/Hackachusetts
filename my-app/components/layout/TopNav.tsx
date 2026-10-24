@@ -62,7 +62,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: (active) => <HomeIcon active={active} /> },
   { label: "Map", href: "/map", icon: () => <MapIcon /> },
-  { label: "Report", big: true, icon: () => <PlusIcon /> },
+  { label: "Report", href: "/report", big: true, icon: () => <PlusIcon /> },
   { label: "Bounties", href: "/bounties", icon: () => <BountyIcon /> },
   { label: "Chat", href: "/chatbot", icon: () => <ChatIcon /> },
 ];
