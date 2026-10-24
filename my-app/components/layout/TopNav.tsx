@@ -63,8 +63,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: (active) => <HomeIcon active={active} /> },
   { label: "Map", href: "/map", icon: () => <MapIcon /> },
   { label: "Report", big: true, icon: () => <PlusIcon /> },
-  { label: "Bounties", icon: () => <BountyIcon /> },
-  { label: "Chat", icon: () => <ChatIcon /> },
+  { label: "Bounties", href: "/bounties", icon: () => <BountyIcon /> },
+  { label: "Chat", href: "/chatbot", icon: () => <ChatIcon /> },
 ];
 
 const BIG_CLASS =
