@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  cacheComponents: true,
+  partialPrefetching: true,
 
   images: {
-    unoptimized: true,
+    // Feed photos come from Wikimedia Commons (openly licensed).
     remotePatterns: [
       {
         protocol: "https",
