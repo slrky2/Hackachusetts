@@ -1,24 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
-
+  /* config options here */
+  cacheComponents: true,
   images: {
-    unoptimized: true,
+    // Feed photos come from Wikimedia Commons (openly licensed).
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "thumb.wikimedia.org",
-        pathname: "/wikipedia/commons/**",
-      },
-      {
-        protocol: "https",
-        hostname: "upload.wikimedia.org",
-        pathname: "/wikipedia/commons/**",
-      },
+      { protocol: "https", hostname: "thumb.wikimedia.org", pathname: "/wikipedia/commons/**" },
+      { protocol: "https", hostname: "upload.wikimedia.org", pathname: "/wikipedia/commons/**" },
     ],
   },
-
+  partialPrefetching: true,
   turbopack: {
     rules: {
       "*.css": {
