@@ -39,8 +39,6 @@ export const AI_CONFIG = {
   // Set ANTHROPIC_API_KEY in my-app/.env.local (shared with scripts/chatbot.py)
   model: "claude-sonnet-5-5",
   maxTokens: 1024,
-  // Knowledge base path, relative to the app directory (my-app/data/Lowell.md)
-  knowledgeBaseFile: "data/Lowell.md",
 } as const;
 
 export const BOUNTY_CONFIG = {

@@ -6,6 +6,8 @@ import { buildSystemPrompt } from "@/lib/ai/prompts/chatbot";
 import { APP_CONFIG, AI_CONFIG } from "@/config/app";
 import type { DietaryRestriction, Allergen, ChatMessage } from "@/types";
 
+export const maxDuration = 60;
+
 // Cache the knowledge base so we only read it from disk once per server process.
 let knowledgeBaseCache: string | null = null;
 
@@ -14,7 +16,7 @@ async function loadKnowledgeBase(): Promise<string> {
   const useCache = process.env.NODE_ENV === "production";
   if (useCache && knowledgeBaseCache !== null) return knowledgeBaseCache;
   // Knowledge base lives at my-app/data/Lowell.md; process.cwd() is my-app/.
-  const filePath = path.join(process.cwd(), AI_CONFIG.knowledgeBaseFile);
+  const filePath = path.join(process.cwd(), "data", "Lowell.md");
   const content = await readFile(filePath, "utf-8");
   if (useCache) knowledgeBaseCache = content;
   return content;

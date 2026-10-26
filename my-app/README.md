@@ -29,12 +29,15 @@ Copy `.env.local.example` to `.env.local` and fill in:
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps JS API key |
-| `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Cloud-based map styling ID |
-| `OPENAI_API_KEY` | Powers CivicBot chat assistant |
-| `DATABASE_URL` | PostgreSQL / other DB connection string |
-| `NEXTAUTH_SECRET` | Auth session signing secret |
-| `NEXTAUTH_URL` | Public URL of the app (e.g. `http://localhost:3000`) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Required Clerk browser key |
+| `CLERK_SECRET_KEY` | Required Clerk server key from the same instance |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps JS and Geocoding API key |
+| `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Optional cloud map styling ID |
+| `ANTHROPIC_API_KEY` | Enables the Claude city assistant |
+| `CITY_STAFF_EMAILS` | Optional comma-separated verified staff emails |
+
+Database and NextAuth variables are not used by the current app.
+See [Vercel deployment instructions](../README.md#deploy-to-vercel) for hosting setup and demo storage limitations.
 
 ---
 
@@ -85,7 +88,7 @@ my-app/
 │       │       ├── upvote/       # POST — toggle the viewer's upvote
 │       │       └── comments/     # POST — add a comment
 │       ├── bounties/             # Bounty creation + claiming
-│       ├── chatbot/              # OpenAI chat completions proxy
+│       ├── chatbot/              # Claude messages proxy
 │       ├── map/                  # Map pin queries (supports bounding box)
 │       ├── posts/                # GET feed posts (per-viewer reaction state)
 │       │   └── [postId]/react/   # POST — toggle "Thanks" / "Going"
@@ -135,7 +138,7 @@ my-app/
 │   │   └── client.ts             # Typed fetch wrapper (api.get/post/put/patch/delete)
 │   ├── ai/
 │   │   └── prompts/
-│   │       └── chatbot.ts        # Builds the OpenAI system prompt with city + dietary context
+│   │       └── chatbot.ts        # Builds the Claude system prompt with city + dietary context
 │   ├── db/
 │   │   ├── index.ts              # DB client stub (swap with Prisma / Drizzle / Supabase)
 │   │   ├── seed.ts               # Mock Lowell, MA reports + posts, marker builder
@@ -196,7 +199,7 @@ my-app/
 
 ## Architecture Notes
 
-- **Auth** — route group `(auth)` keeps login/register outside the dashboard layout. Implement with [NextAuth.js](https://next-auth.js.org/) or [Lucia](https://lucia-auth.com/).
+- **Auth** — route group `(auth)` keeps login/register outside the dashboard layout. Authentication uses Clerk at `/sign-in` and `/sign-up`.
 - **Data fetching** — SWR hooks in `lib/hooks/` call the internal API. Uncomment after installing `swr`.
 - **Validation** — Zod schemas in `lib/validators/` are shared between API route handlers and client-side forms via `react-hook-form` + `@hookform/resolvers`.
 - **Maps** — `@vis.gl/react-google-maps` renders the map client-side. The `/api/map` route serves pins with optional bounding-box filtering.
