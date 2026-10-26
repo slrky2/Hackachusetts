@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Bundle the city knowledge base with the chatbot function on Vercel.
+  outputFileTracingIncludes: {
+    "/api/chatbot": ["./data/Lowell.md"],
+  },
   cacheComponents: true,
   images: {
     // Feed photos come from Wikimedia Commons (openly licensed).

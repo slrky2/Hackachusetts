@@ -37,9 +37,13 @@ npm install -D @types/google.maps
 ## Environment variables
 Copy `.env.local.example` → `.env.local` and fill in:
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-- `OPENAI_API_KEY`
-- `DATABASE_URL`
-- `NEXTAUTH_SECRET`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `ANTHROPIC_API_KEY` (optional chatbot)
+- `CITY_STAFF_EMAILS` (optional staff access)
+
+Vercel uses `my-app` as its Root Directory and Node.js 22.x. See the root README.
+Data stores are demo-only memory; no database is configured.
 
 ## Coding conventions
 - All client components start with `"use client"`.
